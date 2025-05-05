@@ -1,0 +1,20 @@
+--- a/chrome/browser/omaha/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
++++ b/chrome/browser/omaha/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
+@@ -16,7 +16,6 @@
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+
+-import com.google.android.gms.common.GooglePlayServicesUtil;
+
+ import org.chromium.base.BuildInfo;
+ import org.chromium.base.Callback;
+@@ -291,9 +290,7 @@
+                 boolean allowedToUpdate =
+                         checkForSufficientStorage()
+                                 // Disable the version update check for automotive. See b/297925838.
+-                                && !BuildInfo.getInstance().isAutomotive
+-                                && PackageUtils.isPackageInstalled(
+-                                        GooglePlayServicesUtil.GOOGLE_PLAY_STORE_PACKAGE);
++                                && !BuildInfo.getInstance().isAutomotive;
+                 status.updateState =
+                         allowedToUpdate ? UpdateState.UPDATE_AVAILABLE : UpdateState.NONE;

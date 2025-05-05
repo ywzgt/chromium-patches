@@ -1,0 +1,114 @@
+From: csagan5 <32685696+csagan5@users.noreply.github.com>
+Date: Mon, 11 Dec 2017 22:42:11 +0100
+Subject: Add search engine
+
+Add a Google search engine that forces languages to English,
+disable from all its searches RLZ and field experiments querystring parameters.
+Add DuckDuckGo Lite
+
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
+---
+ ...search_engine_choice_scaled_resources.grdp |  1 +
+ .../search_engines/prepopulated_engines.json  | 31 +++++++++++++++++++
+ .../search_engine_countries-inc.cc            |  3 ++
+ .../search_engines/search_engine_type.h       |  5 +++
+ 4 files changed, 40 insertions(+)
+
+diff --git a/components/resources/search_engine_choice_scaled_resources.grdp b/components/resources/search_engine_choice_scaled_resources.grdp
+--- a/components/resources/search_engine_choice_scaled_resources.grdp
++++ b/components/resources/search_engine_choice_scaled_resources.grdp
+@@ -5,6 +5,7 @@
+   <if expr="_google_chrome">
+     <structure type="chrome_scaled_image" name="IDR_GOOGLE_COM_PNG" file="google_chrome/google_search_logo.png" />
+   </if>
++  <structure type="chrome_scaled_image" name="IDR_GOOGLEEN_PNG" file="google_chrome/google_search_logo.png" />
+   <structure type="chrome_scaled_image" name="IDR_AR_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+   <structure type="chrome_scaled_image" name="IDR_AT_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+   <structure type="chrome_scaled_image" name="IDR_AU_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+diff --git a/components/search_engines/prepopulated_engines.json b/components/search_engines/prepopulated_engines.json
+--- a/components/search_engines/prepopulated_engines.json
++++ b/components/search_engines/prepopulated_engines.json
+@@ -113,6 +113,16 @@
+       "id": 92
+     },
+ 
++    "duckduckgo_light": {
++      "name": "DuckDuckGo Light",
++      "keyword": "duckduckgo.com/lite",
++      "favicon_url": "https://duckduckgo.com/favicon.ico",
++      "search_url": "https://duckduckgo.com/lite/?q={searchTerms}",
++      "suggest_url": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
++      "type": "SEARCH_ENGINE_DUCKDUCKGOLIGHT",
++      "id": 12
++    },
++
+     "ecosia": {
+       "name": "Ecosia",
+       "keyword": "ecosia.org",
+@@ -174,6 +184,27 @@
+       "id": 111
+     },
+ 
++    "googleen": {
++      "name": "Google in English",
++      "keyword": "googleen",
++      "favicon_url": "https://www.google.com/favicon.ico",
++      "search_url": "{google:baseURL}search?q={searchTerms}&ie={inputEncoding}&hl=en",
++      "suggest_url": "{google:baseSuggestURL}search?client={google:suggestClient}&q={searchTerms}&hl=en",
++      "image_url": "{google:baseURL}searchbyimage/upload?hl=en",
++      "new_tab_url": "{google:baseURL}_/chrome/newtab?hl=en&ie={inputEncoding}",
++      "contextual_search_url": "{google:baseURL}_/contextualsearch?{google:contextualSearchVersion}{google:contextualSearchContextData}&hl=en",
++      "image_url_post_params": "encoded_image={google:imageThumbnail},image_url={google:imageURL},sbisrc={google:imageSearchSource},original_width={google:imageOriginalWidth},original_height={google:imageOriginalHeight}",
++      "alternate_urls": [
++        "{google:baseURL}?hl=en#q={searchTerms}",
++        "{google:baseURL}search?hl=en#q={searchTerms}",
++        "{google:baseURL}webhp?hl=en#q={searchTerms}",
++        "{google:baseURL}s?hl=en#q={searchTerms}",
++        "{google:baseURL}s?hl=en&q={searchTerms}"
++      ],
++      "type": "SEARCH_ENGINE_GOOGLE_EN",
++      "id": 13
++    },
++
+     "mail_ru": {
+       "name": "@MAIL.RU",
+       "keyword": "mail.ru",
+diff --git a/components/search_engines/search_engine_countries-inc.cc b/components/search_engines/search_engine_countries-inc.cc
+--- a/components/search_engines/search_engine_countries-inc.cc
++++ b/components/search_engines/search_engine_countries-inc.cc
+@@ -33,6 +33,7 @@ struct EngineAndTier {
+ 
+ // Default (for countries with no better engine set)
+ constexpr EngineAndTier engines_default[] = {
++    {SearchEngineTier::kTopEngines, &googleen},
+     {SearchEngineTier::kTopEngines, &google},
+     {SearchEngineTier::kTopEngines, &bing},
+     {SearchEngineTier::kTopEngines, &yahoo},
+@@ -1449,5 +1450,7 @@ const std::vector<EngineAndTier> GetPrepopulationSetFromCountryID(
+   for (size_t i = 0; i < num_engines; i++) {
+     t_url.push_back(engines[i]);
+   }
++  t_url.push_back({SearchEngineTier::kTopEngines, &googleen});
++  t_url.push_back({SearchEngineTier::kTopEngines, &duckduckgo_light});
+   return t_url;
+ }
+diff --git a/components/search_engines/search_engine_type.h b/components/search_engines/search_engine_type.h
+--- a/components/search_engines/search_engine_type.h
++++ b/components/search_engines/search_engine_type.h
+@@ -91,10 +91,15 @@ enum SearchEngineType {
+   SEARCH_ENGINE_YOU = 72,
+   SEARCH_ENGINE_STARTER_PACK_ASK_GOOGLE = 73,
+   SEARCH_ENGINE_LILO = 74,
++  SEARCH_ENGINE_GOOGLE_EN = 75,
++  SEARCH_ENGINE_DUCKDUCKGOLIGHT = 76,
+ 
+   SEARCH_ENGINE_MAX  // Bounding value needed for UMA histogram macro.
+ };
+ 
++static_assert(SEARCH_ENGINE_DUCKDUCKGOLIGHT == (SEARCH_ENGINE_MAX - 1),
++              "Please check this patch");
++
+ // Enum to record the type of search engine a user used in keyword mode. This
+ // should be kept aligned with the `OmniboxBuiltinEngineType` enum in enums.xml.
+ // Entries should not be renumbered and numeric values should never be reused.
+--

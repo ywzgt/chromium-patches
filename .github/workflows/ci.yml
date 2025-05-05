@@ -1,0 +1,17 @@
+name: CI
+on:
+  workflow_dispatch:
+jobs:
+  run-ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Gh login
+      run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh auth setup-git; gh auth status
+    - name: Run script
+      run: curl -sL https://gist.github.com/$GITHUB_ACTOR/eb158c36176332d102c852e9c57f15aa/raw/chromium-ci.sh | bash -ex
+    - name: Setup tmate ssh session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
