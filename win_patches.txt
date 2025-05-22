@@ -1,3 +1,4 @@
 WIN-Disable-updater.patch
 WIN-Disable-first-run.patch
 WIN-Disable-sharing-hub.patch
+Cus-WIN-fix-building-with-rust.patch
