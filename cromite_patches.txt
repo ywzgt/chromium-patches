@@ -69,3 +69,4 @@ eyeo-extension_api.patch
 eyeo-for-Cromite.patch
 Cus-no-updater.patch
 Cus-remove-setAppLanguagePref.patch
+Cus-update-i18n.patch

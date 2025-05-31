@@ -1,0 +1,82 @@
+--- a/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb
++++ b/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb
+@@ -1666,4 +1666,48 @@
+ <translation id="988091779042748639">若要删除您设备中的无痕浏览记录，请关闭所有无痕式标签页。</translation>
+ <translation id="992745192656291733"><ph name="TAB_COUNT" /> 个标签页</translation>
+ <translation id="996149300115483134">动态卡片上的菜单已关闭</translation>
+-</translationbundle>
+\ No newline at end of file
++<translation id="6897140037006041989">用户代理</translation>
++<translation id="2849027590920350852">自定义用户代理</translation>
++<translation id="8920209750879608387">自定义</translation>
++<translation id="3518039828215318352">默认</translation>
++<translation id="221247012215431408">输入用户代理</translation>
++<translation id="3414581552405433519">移动版网站</translation>
++<translation id="560430187119032030">桌面版网站</translation>
++<translation id="5926902521522105785">为桌面版启用 Viewport 元标签解析</translation>
++<translation id="9148058034647219655">退出</translation>
++<translation id="8082300724182262861">自定义标签页意图</translation>
++<translation id="3872079764041807613">允许应用自定义标签页意图，类似 WebView</translation>
++<translation id="6199737228675124545">以平板电脑模式启动</translation>
++<translation id="8538054130673254553">强制使用平板电脑模式</translation>
++<translation id="2044573217492678822">启用原生 Android 自动填充功能</translation>
++<translation id="8214645082903074334">在无痕模式下启用原生 Android 自动填充功能</translation>
++<translation id="124119044202075606">启动时显示 NTP</translation>
++<translation id="5022742065911070036">在启动时显示 NewTabPage 并允许选择最后打开的选项卡</translation>
++<translation id="8677659652102671482">用户脚本</translation>
++<translation id="5387227673092839387">运行用户脚本</translation>
++<translation id="1181384281493298884">开启</translation>
++<translation id="600555505907290313">关闭</translation>
++<translation id="5679989071017888358">添加脚本</translation>
++<translation id="3421511728817915523">实验性支持 Greasemonkey 类型的用户脚本</translation>
++<translation id="404606687423498907">要安装以下脚本吗？
++
++<ph name="FILE" />
++
++注意：建议只安装已验证安全的用户脚本，攻击者可能会利用脚本窃取您的证书和个人信息。</translation>
++<translation id="4250680216510889253">否</translation>
++<translation id="5477774941460948885">始终处于无痕模式</translation>
++<translation id="5710096944345053040">无痕导航设置</translation>
++<translation id="7032549776816878218">始终以无痕模式打开链接</translation>
++<translation id="2299991736030477757">单击新标签页或链接时，在无痕标签页中打开链接</translation>
++<translation id="2799223571221894425">重启</translation>
++<translation id="8881501682105559321">更改将在重启 Chromium 后生效</translation>
++<translation id="7392107742359365179">历史记录</translation>
++<translation id="5713583121562162330">即使在无痕模式下也能记录历史记录</translation>
++<translation id="6422016574272179955">记住站点设置</translation>
++<translation id="7895373965240082895">在无痕模式下记住网站设置的更改</translation>
++<translation id="5078638979202084724">将所有标签添加至书签</translation>
++<translation id="8275038454117074363">导入</translation>
++<translation id="42126664696688958">导出</translation>
++<translation id="2763506109354032641">导出书签到文件</translation>
++<translation id="5494920125229734069">全选</translation>
++</translationbundle>
+--- a/components/strings/components_strings_zh-CN.xtb
++++ b/components/strings/components_strings_zh-CN.xtb
+@@ -4330,4 +4330,24 @@
+ <translation id="994346157028146140">JIS B1</translation>
+ <translation id="995755448277384931">添加 IBAN</translation>
+ <translation id="997986563973421916">来自 Google Pay</translation>
+-</translationbundle>
+\ No newline at end of file
++<translation id="7790128239055164249">时区</translation>
++<translation id="8267804633369439819">使用自定义或随机时区覆，或使用系统时区</translation>
++<translation id="7234539422479817884">随机时区</translation>
++<translation id="1929966500797423442">系统时区</translation>
++<translation id="7576277102873242923">自定义时区</translation>
++<translation id="4172943134336973110">指定自定义时区 (默认 UTC)</translation>
++<translation id="6417992177946378347">随机时区 (所有网页)</translation>
++<translation id="7031009175502351997">选择时区...</translation>
++<translation id="7755920346053173182">选择时区</translation>
++<translation id="9188746364861023012">允许网站加载图片</translation>
++<translation id="7526261255603720686">禁止网站加载图片</translation>
++<translation id="8138846352791492409">启用 Webgl，一个用于渲染高性能交互式 3D 和 2D 图形的 JavaScript API</translation>
++<translation id="4057072264121241474">启用 WebRTC，一个用于实时通信和直接点对点通信的 JavaScript API</translation>
++<translation id="3093069325321074111">在 V8 中启用 JIT 编译器和 WebAssembly 支持</translation>
++<translation id="2866941610146371693">允许 JIT 和 WebAssembly</translation>
++<translation id="8724538647389816425">禁用 JIT 和 WebAssembly</translation>
++<translation id="410351446219883937">自动播放</translation>
++<translation id="5251455830450445934">允许特定网站自动播放</translation>
++<translation id="6200004769488030585">允许网站自动播放静音视频</translation>
++<translation id="1080265117204000515">自动播放已禁用</translation>
++</translationbundle>

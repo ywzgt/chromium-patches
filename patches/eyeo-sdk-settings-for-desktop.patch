@@ -1,0 +1,630 @@
+--- a/chrome/browser/resources/settings/BUILD.gn
++++ b/chrome/browser/resources/settings/BUILD.gn
+@@ -62,6 +62,7 @@ build_webui("build") {
+     "a11y_page/a11y_page.ts",
+     "about_page/about_page.ts",
+     "ai_page/ai_page.ts",
++    "adblock_page/adblock_page.ts",
+     "appearance_page/appearance_fonts_page.ts",
+     "appearance_page/appearance_page.ts",
+     "appearance_page/home_url_input.ts",
+@@ -395,6 +396,7 @@ build_webui("build") {
+   ts_definitions = [
+     "//tools/typescript/definitions/autofill_private.d.ts",
+     "//tools/typescript/definitions/chrome_event.d.ts",
++    "//tools/typescript/definitions/adblock_private.d.ts",
+     "//tools/typescript/definitions/chrome_send.d.ts",
+     "//tools/typescript/definitions/language_settings_private.d.ts",
+     "//tools/typescript/definitions/management.d.ts",
+--- /dev/null
++++ b/chrome/browser/resources/settings/adblock_page/adblock_page.html
+@@ -0,0 +1,212 @@
++<!--
++    This file is part of Bromite.
++
++    Bromite is free software: you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation, either version 3 of the License, or
++    (at your option) any later version.
++
++    Bromite is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with Bromite. If not, see <https://www.gnu.org/licenses/>.
++-->
++
++<style include="settings-shared cr-shared-style settings-shared action-link iron-flex">
++    #languagesCollapse .list-item.selected {
++        min-height: var(--settings-row-two-line-min-height);
++    }
++    .ad-fixed-width {
++        width: 80%;
++        text-overflow: ellipsis;
++        word-wrap: break-word;
++    }
++</style>
++<settings-toggle-button class="hr" pref="{{prefs.adblock.enabled}}"
++                        on-change="onAdblockEnabled_"
++                        label="Enable Adblock Plus" data-qa="adblock-toogle"
++                        sub-label-icon="[[additionalMessageIcon]]"
++                        sub-label="[[additionalMessage]]">
++</settings-toggle-button>
++
++<div hidden$="[[!prefs.adblock.enabled.value]]">
++
++    <div class="cr-row first">
++        <div class="flex cr-padded-text">
++            <div>Enable anti-circumvention and snippets</div>
++            <div class="cr-secondary-text">
++                Snippets are pieces of JavaScript code, injected by the Adblock Plus, that execute within the context of a website and combat advanced ads that circumvent ordinary blocking.
++                The functionality is ONLY allowed for the list
++                <a href="https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt">abp-filters-anti-cv.txt</a>
++                which is activated by this setting.
++                <br><a href="https://gitlab.com/eyeo/anti-cv/abp-filters-anti-cv">Open ABP anti-circumvention filter list repo</a>
++                <br><a href="https://developers.eyeo.com/snippets/snippets-overview">Open ABP Snippets Overview</a>
++            </div>
++        </div>
++        <div class="separator"></div>
++        <cr-toggle id="enablePrivilegedFiltersToggle"
++                   checked="[[isEnablePrivilegedFiltersToggle_]]"
++                   on-change="onEnablePrivilegedFiltersToggle_">
++        </cr-toggle>
++    </div>
++
++    <div class="cr-row first">
++        <div class="flex cr-padded-text">
++        </div>
++        <cr-button class="button" on-click="startUpdateCycle">
++            Check for updates now
++        </cr-button>
++    </div>
++
++    <div style="border-top: 1px solid silver">
++        <cr-expand-button class="cr-row first" expanded="{{recommendedSubscriptions}}" data-qa="recommended-subscriptions-menu-item">
++            <div>
++                <div>Built in Subscriptions ([[countEnabled]] selected)</div>
++                <div class="cr-secondary-text">
++                    Add the languages in which you regularly browse websites in
++                </div>
++            </div>
++        </cr-expand-button>
++        <iron-collapse opened="{{recommendedSubscriptions}}">
++            <div class="list-frame vertical-list">
++                <template is="dom-repeat" items="[[subscriptions]]">
++                    <div class="list-item">
++                        <cr-checkbox id="[[item.url]]" no-set-pref on-change="selectRecommendedSubscription"
++                            checked="{{item.enabled}}">
++                        </cr-checkbox>
++                        <div class="start cr-padded-text">
++                            <div data-qa="recommended-subscription-list-item">
++                                [[item.title]]
++                            </div>
++                            <div hidden="[[item.enabled]]">
++                                <div><b>Download from:</b> [[item.url]]</div>
++                            </div>
++                            <div hidden="[[!item.enabled]]" style="margin-left: 20px; margin-top: 5px;">
++                                <div><b>URL:</b> [[item.url]]</div>
++                                <div><b>Version:</b> [[item.current_version]]</div>
++                                <div><b>Status:</b> [[item.installation_state]] ([[item.last_installation_time]])</div>
++                                <div><b>Download:</b> [[item.download_success_count]] <b>Errors:</b> [[item.download_error_count]]</div>
++                            </div>
++                        </div>
++                    </div>
++                </template>
++            </div>
++        </iron-collapse>
++    </div>
++    <div>
++        <cr-expand-button class="cr-row first" expanded="{{allowedDomainsOpened}}" data-qa="allowed-domains-menu-item">
++            <div>
++                Allowed Domains ([[allowedDomainsCount]] added)
++            </div>
++            <div class="cr-secondary-text">
++                Support your favorite websites by adding them to this list. You might see ads on them.
++            </div>
++        </cr-expand-button>
++        <iron-collapse opened="{{allowedDomainsOpened}}">
++            <div class="list-frame vertical-list">
++                <template is="dom-repeat" items="{{allowedDomains}}">
++                    <div class="list-item">
++                        <div class="start cr-padded-text">
++                            <div data-qa="allowed-domains-list-item">
++                                [[item]]
++                            </div>
++                        </div>
++                        <cr-button class="button" id="[[item]]" on-click="removeAllowedDomain" data-qa="remove-allowed-domains-btn">
++                            Remove
++                        </cr-button>
++                    </div>
++                </template>
++                <div class="list-item">
++                    <div class="start cr-padded-text">
++                        <cr-input slot="inputs" value="{{allowedDomainInput}}" data-qa="allowed-domains-input">
++                            <cr-button slot="suffix" class="action-button" id="[[item]]" on-click="addAllowedDomain" data-qa="add-allowed-domains-btn">
++                                Add
++                            </cr-button>
++                        </cr-input>
++                    </div>
++                </div>
++            </div>
++        </iron-collapse>
++    </div>
++    <div>
++        <cr-expand-button class="cr-row first" expanded="{{customSubscriptionsOpened}}" data-qa="custom-subscriptions-menu-item">
++            <div>
++                Custom Subscriptions ([[customSubscriptions.length]] added)
++            </div>
++            <div class="cr-secondary-text">
++                Add custom filter urls
++            </div>
++        </cr-expand-button>
++        <iron-collapse opened="{{customSubscriptionsOpened}}">
++            <div class="list-frame vertical-list">
++                <template is="dom-repeat" items="{{customSubscriptions}}">
++                    <div class="list-item">
++                        <div class="start cr-padded-text ad-fixed-width">
++                            <div data-qa="custom-subscriptions-list-item">
++                                [[item.url]]
++                                <div style="margin-left: 20px; margin-top: 5px;">
++                                    <div><b>Version:</b> [[item.current_version]]</div>
++                                    <div><b>Status:</b> [[item.installation_state]] ([[item.last_installation_time]])</div>
++                                    <div><b>Download:</b> [[item.download_success_count]] <b>Errors:</b> [[item.download_error_count]]</div>
++                                </div>
++                            </div>
++                        </div>
++                        <cr-button class="button" id="[[item.url]]"
++                                   on-click="removeCustomSubscription" data-qa="remove-custom-subscriptions-btn">
++                            Remove
++                        </cr-button>
++                    </div>
++                </template>
++                <div class="list-item">
++                    <div class="start cr-padded-text">
++                        <cr-input slot="inputs" value="{{customSubscriptionInput}}" data-qa="custom-subscriptions-input">
++                            <cr-button slot="suffix" class="action-button" id="[[item]]" on-click="addCustomSubscription" data-qa="add-custom-subscription-btn">
++                                Add
++                            </cr-button>
++                        </cr-input>
++                    </div>
++                </div>
++            </div>
++        </iron-collapse>
++    </div>
++    <div>
++        <cr-expand-button class="cr-row first" expanded="{{customFiltersOpened}}" data-qa="custom-filters-menu-item">
++            <div>
++                Custom Filters ([[customFilters.length]] added)
++            </div>
++            <div class="cr-secondary-text">
++                Add custom filter commands
++            </div>
++        </cr-expand-button>
++        <iron-collapse opened="{{customFiltersOpened}}">
++            <div class="list-frame vertical-list">
++                <template is="dom-repeat" items="{{customFilters}}">
++                    <div class="list-item">
++                        <div class="start cr-padded-text">
++                            <div data-qa="custom-filters-list-item">
++                                [[item]]
++                            </div>
++                        </div>
++                        <cr-button class="button" id="[[item]]" on-click="removeCustomFilter" data-qa="remove-custom-filter-btn">
++                            Remove
++                        </cr-button>
++                    </div>
++                </template>
++                <div class="list-item">
++                    <div class="start cr-padded-text">
++                        <cr-input slot="inputs" value="{{customFilterInput}}" data-qa="custom-filter-input">
++                            <cr-button slot="suffix" class="action-button" id="[[item]]" on-click="addCustomFilter" data-qa="add-custom-filter-btn">
++                                Add
++                            </cr-button>
++                        </cr-input>
++                    </div>
++                </div>
++            </div>
++        </iron-collapse>
++    </div>
++
++</div>
++<cr-toast-manager></cr-toast-manager>
+--- /dev/null
++++ b/chrome/browser/resources/settings/adblock_page/adblock_page.ts
+@@ -0,0 +1,286 @@
++/*
++    This file is part of Bromite.
++
++    Bromite is free software: you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation, either version 3 of the License, or
++    (at your option) any later version.
++
++    Bromite is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with Bromite. If not, see <https://www.gnu.org/licenses/>.
++*/
++import 'chrome://resources/cr_elements/cr_button/cr_button.js';
++import 'chrome://resources/cr_elements/cr_shared_style.css.js';
++import 'chrome://resources/polymer/v3_0/iron-collapse/iron-collapse.js';
++import 'chrome://resources/polymer/v3_0/iron-flex-layout/iron-flex-layout-classes.js';
++import 'chrome://resources/polymer/v3_0/iron-icon/iron-icon.js';
++import '../settings_shared.css.js';
++
++import {I18nMixin} from 'chrome://resources/cr_elements/i18n_mixin.js';
++import {BaseMixin} from '../base_mixin.js';
++import {PolymerElement} from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
++import {SettingsToggleButtonElement} from '../controls/settings_toggle_button.js';
++import {PrefsMixin} from '/shared/settings/prefs/prefs_mixin.js';
++import {CrCheckboxElement} from 'chrome://resources/cr_elements/cr_checkbox/cr_checkbox.js';
++import {getTemplate} from './adblock_page.html.js';
++import {getToastManager} from 'chrome://resources/cr_elements/cr_toast/cr_toast_manager.js';
++
++const SettingsAdblockPageElementBase =
++   I18nMixin(PrefsMixin(BaseMixin((PolymerElement))));
++
++interface Subscription {
++   url: string;
++   title: string;
++   enabled: boolean;
++   current_version: string;
++   download_error_count: number;
++   download_success_count: number;
++   installation_state: string;
++   last_installation_time: string;
++}
++
++export class SettingsAdblockPageElement extends
++                     SettingsAdblockPageElementBase {
++   static get is() {
++      return 'settings-adblock-page';
++   }
++
++   static get template() {
++      return getTemplate();
++   }
++
++   // input fields updated by html
++   public customSubscriptionInput: string;
++   public customFilterInput: string;
++   public allowedDomainInput: string;
++   public additionalMessage: string;
++   public additionalMessageIcon: string;
++   public countEnabled: number;
++   public allowedDomainsCount: number;
++   public isEnablePrivilegedFiltersToggle_: boolean;
++
++   // models that will fill templates lists in html
++   public customSubscriptions: Subscription[] = [];
++   public customFilters: Array<string> = [];
++   public allowedDomains: Array<string> = [];
++   public subscriptions: Subscription[] = [];
++
++   private syncSubscriptions() {
++      this.subscriptions = []
++      this.customSubscriptions = [];
++
++      chrome.adblockPrivate?.getBuiltInSubscriptions(list => {
++         chrome.adblockPrivate.getInstalledSubscriptions(activelist => {
++            let new_subscriptions: Subscription[] = [];
++            let custom_subscriptions: Subscription[] = [];
++
++            list.forEach(obj => {
++               new_subscriptions.push({
++                  title: obj.title,
++                  enabled: false,
++                  url: obj.url,
++                  current_version: '',
++                  download_error_count: 0,
++                  download_success_count: 0,
++                  installation_state: '',
++                  last_installation_time: ''
++               })
++            })
++
++            activelist.forEach(obj => {
++               var found = new_subscriptions.find(element => element.url == obj.url);
++               if (found === undefined) {
++                  found = {
++                     title: obj.title,
++                     enabled: false,
++                     url: obj.url,
++                     current_version: '',
++                     download_error_count: 0,
++                     download_success_count: 0,
++                     installation_state: '',
++                     last_installation_time: ''
++                  }
++                  custom_subscriptions.push(found)
++               }
++               found.enabled = true;
++               found.current_version = obj.current_version;
++               found.download_error_count = obj.download_error_count;
++               found.download_success_count = obj.download_success_count;
++               found.installation_state = obj.installation_state;
++               found.last_installation_time = obj.last_installation_time;
++            })
++
++            this.subscriptions = new_subscriptions;
++            this.customSubscriptions = custom_subscriptions;
++            this.updateUI();
++         })
++      });
++   }
++
++   private updateUI() {
++      this.additionalMessage = "";
++      this.additionalMessageIcon = "";
++      this.countEnabled = 0;
++
++      chrome.adblockPrivate?.isEnabled(enabled => {
++         if (!enabled) return;
++
++         let c = 0;
++         this.subscriptions.forEach(obj => {
++            if (obj.enabled) c++;
++         });
++         this.countEnabled = c;
++         if (this.countEnabled == 0 &&
++               this.customSubscriptions.length == 0 &&
++               this.customFilters.length == 0) {
++            this.additionalMessage = "No subscriptions selected. Adblock is not active.";
++            this.additionalMessageIcon = "cr:warning";
++         }
++      });
++
++      chrome.adblockPrivate?.isPrivilegedFiltersEnabled(enabled => {
++         this.isEnablePrivilegedFiltersToggle_ = enabled;
++      });
++   }
++
++   private syncCustomFilters() {
++      chrome.adblockPrivate?.getCustomFilters(domain => {
++         this.customFilters = [];
++         domain.forEach(value => {
++            this.customFilters.push(value);
++         })
++         this.updateUI();
++      });
++   }
++
++   private syncAllowedDomains() {
++      this.allowedDomainsCount = 0;
++      chrome.adblockPrivate?.getAllowedDomains(domain => {
++         this.allowedDomains = [];
++         domain.forEach(value => {
++            this.allowedDomains.push(value);
++         })
++         this.allowedDomainsCount = this.allowedDomains.length;
++         this.updateUI();
++      });
++   }
++
++   public override ready() {
++      super.ready();
++
++      this.syncSubscriptions();
++      this.syncCustomFilters();
++      this.syncAllowedDomains();
++   }
++
++   private onAdblockEnabled_(event: Event) {
++      if ((event.target as SettingsToggleButtonElement).checked) {
++        chrome.adblockPrivate.setEnabled(true);
++      } else {
++        chrome.adblockPrivate.setEnabled(false);
++      }
++      this.updateUI();
++   }
++
++   private onEnablePrivilegedFiltersToggle_(_evt: any, enabled: boolean) {
++      chrome.adblockPrivate.setPrivilegedFiltersEnabled(enabled);
++      this.syncSubscriptions();
++   }
++
++   private cleanUrl(url: string) : string {
++      let cleanedUrl : string = "";
++      try {
++         cleanedUrl = new URL(url).host;
++      } catch (err) {
++         try {
++            // one last try by adding schema
++            cleanedUrl = new URL("https://" + url).host;
++         }
++         catch (err) {
++            console.log("malformed url " + url);
++            return "";
++         }
++      }
++      return cleanedUrl;
++   }
++
++   private selectRecommendedSubscription(e: Event) {
++      const url = ((e.target as CrCheckboxElement).id);
++      const enabled = ((e.target as CrCheckboxElement).checked);
++      if (enabled) {
++         chrome.adblockPrivate.installSubscription(url);
++      } else {
++         chrome.adblockPrivate.uninstallSubscription(url);
++      }
++      this.updateUI();
++   }
++
++   private removeCustomFilter(e: Event) {
++      const filter = ((e.target as HTMLElement).id);
++      chrome.adblockPrivate.removeCustomFilter(filter);
++      const i = this.customFilters.indexOf(filter);
++      this.splice('customFilters', i, 1);
++      this.updateUI();
++   }
++
++   private addCustomFilter() {
++      if (this.customFilterInput == undefined || this.customFilterInput ==  "") return;
++      chrome.adblockPrivate.addCustomFilter(this.customFilterInput);
++      this.customFilterInput = "";
++      this.syncCustomFilters();
++   }
++
++   private removeAllowedDomain(e: Event) {
++      const allowedDomain = ((e.target as HTMLElement).id);
++      chrome.adblockPrivate.removeAllowedDomain(allowedDomain);
++      const i = this.allowedDomains.indexOf(allowedDomain);
++      this.splice('allowedDomains', i, 1);
++      this.allowedDomainsCount = this.allowedDomains.length;
++      this.updateUI();
++   }
++
++   private addAllowedDomain() {
++      if (this.allowedDomainInput == undefined || this.allowedDomainInput == "") return;
++      const cleanedUrl = this.cleanUrl(this.allowedDomainInput);
++      if (cleanedUrl == "") return;
++      chrome.adblockPrivate.addAllowedDomain(cleanedUrl);
++      this.allowedDomainInput = "";
++      this.syncAllowedDomains();
++   }
++
++   private removeCustomSubscription(e: Event) {
++      const url = ((e.target as HTMLElement).id);
++      const subscription = this.customSubscriptions.find( x => x.url = url);
++      chrome.adblockPrivate.uninstallSubscription(subscription!.url);
++      this.splice('customSubscriptions', this.customSubscriptions.indexOf(subscription!), 1);
++      this.updateUI();
++   }
++
++   private addCustomSubscription() {
++      if (this.customSubscriptionInput == undefined || this.customSubscriptionInput == "") return;
++      chrome.adblockPrivate.installSubscription(this.customSubscriptionInput);
++      this.customSubscriptionInput = "";
++      this.syncSubscriptions();
++   }
++
++   private startUpdateCycle() {
++      const toastManager = getToastManager();
++      chrome.adblockPrivate.startUpdate();
++      toastManager.duration = 5000;
++      toastManager.show("Starting update...");
++   }
++}
++
++declare global {
++   interface HTMLElementTagNameMap {
++      'settings-adblock-page': SettingsAdblockPageElement;
++   }
++}
++
++customElements.define(
++   SettingsAdblockPageElement.is, SettingsAdblockPageElement);
+--- a/chrome/browser/resources/settings/basic_page/basic_page.html
++++ b/chrome/browser/resources/settings/basic_page/basic_page.html
+@@ -31,6 +31,13 @@
+             <settings-ai-page prefs="{{prefs}}"></settings-ai-page>
+           </settings-section>
+         </template>
++        <template is="dom-if" if="[[showPage_(pageVisibility.adblock)]]"
++            restamp>
++          <settings-section page-title="Adblock"
++              section="adblock">
++            <settings-adblock-page prefs="{{prefs}}"></settings-adblock-page>
++          </settings-section>
++        </template>
+         <template is="dom-if" if="[[showPage_(pageVisibility.autofill)]]"
+             restamp>
+           <settings-section page-title="$i18n{autofillPageTitle}"
+--- a/chrome/browser/resources/settings/basic_page/basic_page.ts
++++ b/chrome/browser/resources/settings/basic_page/basic_page.ts
+@@ -11,6 +11,7 @@ import 'chrome://resources/cr_elements/cr_shared_style.css.js';
+ import 'chrome://resources/cr_elements/cr_shared_vars.css.js';
+ import 'chrome://resources/polymer/v3_0/iron-flex-layout/iron-flex-layout-classes.js';
+ import '../ai_page/ai_page.js';
++import '../adblock_page/adblock_page.js';
+ import '../appearance_page/appearance_page.js';
+ import '../privacy_page/privacy_guide/privacy_guide_promo.js';
+ import '../privacy_page/privacy_page.js';
+--- a/chrome/browser/resources/settings/page_visibility.ts
++++ b/chrome/browser/resources/settings/page_visibility.ts
+@@ -9,6 +9,7 @@ import {loadTimeData} from './i18n_setup.js';
+  */
+ export interface PageVisibility {
+   a11y?: boolean;
++  adblock?: boolean;
+   advancedSettings?: boolean;
+   ai?: boolean;
+   appearance?: boolean|AppearancePageVisibility;
+--- a/chrome/browser/resources/settings/route.ts
++++ b/chrome/browser/resources/settings/route.ts
+@@ -212,6 +212,10 @@ function createRoutes(): SettingsRoutes {
+     r.FONTS = r.APPEARANCE.createChild('/fonts');
+   }
+
++  if (visibility.adblock !== false) {
++    r.ADBLOCK = r.BASIC.createSection('/adblock', 'adblock');
++  }
++
+   if (visibility.autofill !== false) {
+     r.AUTOFILL = r.BASIC.createSection(
+         '/autofill', 'autofill', loadTimeData.getString('autofillPageTitle'));
+--- a/chrome/browser/resources/settings/router.ts
++++ b/chrome/browser/resources/settings/router.ts
+@@ -13,6 +13,7 @@ import {loadTimeData} from './i18n_setup.js';
+  */
+ export interface SettingsRoutes {
+   ABOUT: Route;
++  ADBLOCK: Route;
+   ACCESSIBILITY: Route;
+   ADDRESSES: Route;
+   ADVANCED: Route;
+--- a/chrome/browser/resources/settings/settings.ts
++++ b/chrome/browser/resources/settings/settings.ts
+@@ -50,6 +50,7 @@ export {AppearanceBrowserProxy, AppearanceBrowserProxyImpl} from './appearance_p
+ export {SettingsAppearancePageElement, SystemTheme} from './appearance_page/appearance_page.js';
+ export {HomeUrlInputElement} from './appearance_page/home_url_input.js';
+ export {SettingsAutofillPageElement} from './autofill_page/autofill_page.js';
++export {SettingsAdblockPageElement} from './adblock_page/adblock_page.js';
+ export {PasswordCheckReferrer, PasswordManagerImpl, PasswordManagerPage, PasswordManagerProxy} from './autofill_page/password_manager_proxy.js';
+ export {BaseMixin} from './base_mixin.js';
+ export {SettingsBasicPageElement} from './basic_page/basic_page.js';
+--- a/chrome/browser/resources/settings/settings_menu/settings_menu.html
++++ b/chrome/browser/resources/settings/settings_menu/settings_menu.html
+@@ -146,6 +146,11 @@
+           $i18n{a11yPageTitle}
+           <cr-ripple></cr-ripple>
+         </a>
++        <a role="menuitem" id="adblock" href="/adblock" class="cr-nav-menu-item" hidden="[[!pageVisibility.adblock]]">
++          <iron-icon icon="settings:block"></iron-icon>
++          Adblock
++          <paper-ripple></paper-ripple>
++        </a>
+   <if expr="not chromeos_ash">
+         <a role="menuitem" id="system" href="/system" class="cr-nav-menu-item"
+             hidden="[[!pageVisibility.system]]">
+--- a/tools/typescript/definitions/adblock_private.d.ts
++++ b/tools/typescript/definitions/adblock_private.d.ts
+@@ -33,8 +33,22 @@ declare global {
+         title: string;
+         current_version: string;
+         last_installation_time: string;
++        download_error_count: number;
++        download_success_count: number;
+       }
+
++      export function startUpdate(): void;
++
++      export function setPrivilegedFiltersEnabled(
++        enabled: boolean,
++      ): void;
++
++      export function isPrivilegedFiltersEnabled(
++        callback: (
++          result: boolean,
++        ) => void,
++      ): void;
++
+       export interface SessionStatsEntry {
+         url: string;
+         count: number;

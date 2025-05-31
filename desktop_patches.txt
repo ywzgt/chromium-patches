@@ -1,0 +1,4 @@
+eyeo-sdk-base.patch
+eyeo-sdk-chrome_integration.patch
+eyeo-sdk-extension_api.patch
+eyeo-sdk-settings-for-desktop.patch
