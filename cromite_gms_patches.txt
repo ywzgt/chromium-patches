@@ -1,6 +1,8 @@
 bromite-build-utils.patch
+ungoogled-chromium-no-special-hosts-domains.patch
 Add-support-for-ISupportHelpAndFeedback.patch
 webRTC-do-not-expose-local-IP-addresses.patch
+Add-search-engine.patch
 Add-exit-menu-item.patch
 Do-not-ignore-download-location-prompt-setting.patch
 Add-support-for-writing-URIs.patch
@@ -36,4 +38,4 @@ eyeo-android_api.patch
 eyeo-android_settings.patch
 eyeo-extension_api.patch
 eyeo-for-Cromite.patch
-Cus-remove-Dynamic.patch
+Cus-update-i18n.patch
