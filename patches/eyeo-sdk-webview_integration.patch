@@ -1,0 +1,1774 @@
+From 1d5e719fcf71cb4dce8166c1751dbb37976f6b44 Mon Sep 17 00:00:00 2001
+From: chromium-sdk <project_26591639_bot@noreply.gitlab.com>
+Date: Thu, 30 May 2024 07:40:07 +0200
+Subject: [PATCH] eyeo Browser Ad filtering Solution: Android Weview
+ Integration Module
+
+Based on Chromium 126.0.6478.8
+
+Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API Module
+---
+ android_webview/BUILD.gn                      |  9 ++
+ android_webview/browser/BUILD.gn              |  9 ++
+ android_webview/browser/adblock/README.md     |  3 +
+ .../adblock_aw_content_browser_client.cc      | 86 +++++++++++++++++++
+ .../adblock_aw_content_browser_client.h       | 55 ++++++++++++
+ android_webview/browser/aw_browser_context.cc | 23 +++++
+ android_webview/browser/aw_browser_context.h  |  1 +
+ .../browser/aw_browser_main_parts.cc          |  7 ++
+ android_webview/browser/aw_contents.cc        | 26 ++++++
+ .../browser/aw_feature_list_creator.cc        | 17 ++++
+ .../assets/adblock/adblock_frame_with_ad.html | 25 ++++++
+ .../test/adblock/AdblockControllerTest.java   | 52 +++++++++++
+ .../test/adblock/AssetsFileTest.java          | 83 ++++++++++++++++++
+ .../test/adblock/DefaultSettingsTest.java     | 52 +++++++++++
+ .../adblock/FilteringConfigurationTest.java   | 68 +++++++++++++++
+ .../adblock/TestPagesCircumventionTest.java   | 44 ++++++++++
+ .../test/adblock/TestPagesCspTest.java        | 44 ++++++++++
+ .../adblock/TestPagesElemhideEmuInvTest.java  | 44 ++++++++++
+ .../adblock/TestPagesElemhideEmuTest.java     | 44 ++++++++++
+ .../test/adblock/TestPagesElemhideTest.java   | 44 ++++++++++
+ .../test/adblock/TestPagesExceptionTest.java  | 44 ++++++++++
+ .../test/adblock/TestPagesFilterTest.java     | 44 ++++++++++
+ .../adblock/TestPagesHeaderFilterTest.java    | 44 ++++++++++
+ .../test/adblock/TestPagesHelper.java         | 76 ++++++++++++++++
+ .../test/adblock/TestPagesInlineCssTest.java  | 44 ++++++++++
+ .../test/adblock/TestPagesRemoveTest.java     | 44 ++++++++++
+ .../test/adblock/TestPagesRewriteTest.java    | 44 ++++++++++
+ .../test/adblock/TestPagesSiteKeyTest.java    | 44 ++++++++++
+ .../test/adblock/TestPagesSnippetsTest.java   | 44 ++++++++++
+ .../test/adblock/TestPagesWebsocketTest.java  | 44 ++++++++++
+ .../adblock/TestPagesWildcardDomainTest.java  | 44 ++++++++++
+ android_webview/lib/aw_main_delegate.cc       |  9 +-
+ android_webview/test/BUILD.gn                 | 26 ++++++
+ .../ui/grit_resources_allowlist.txt           | 11 +++
+ 34 files changed, 1296 insertions(+), 2 deletions(-)
+ create mode 100644 android_webview/browser/adblock/README.md
+ create mode 100644 android_webview/browser/adblock/adblock_aw_content_browser_client.cc
+ create mode 100644 android_webview/browser/adblock/adblock_aw_content_browser_client.h
+ create mode 100644 android_webview/javatests/assets/adblock/adblock_frame_with_ad.html
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/AdblockControllerTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/AssetsFileTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/DefaultSettingsTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/FilteringConfigurationTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCircumventionTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCspTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuInvTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesExceptionTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesFilterTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHeaderFilterTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHelper.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesInlineCssTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRemoveTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRewriteTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSiteKeyTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSnippetsTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWebsocketTest.java
+ create mode 100644 android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWildcardDomainTest.java
+
+diff --git a/android_webview/BUILD.gn b/android_webview/BUILD.gn
+index 95ea9eafd3..0d4c6817fa 100644
+--- a/android_webview/BUILD.gn
++++ b/android_webview/BUILD.gn
+@@ -1,6 +1,10 @@
+ # Copyright 2015 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
++#
++# This source code is a part of eyeo Chromium SDK.
++# Use of this source code is governed by the GPLv3 that can be found in the
++# components/adblock/LICENSE file.
+ 
+ import("//android_webview/system_webview_apk_tmpl.gni")
+ import("//android_webview/system_webview_bundle.gni")
+@@ -701,6 +705,7 @@ android_library("browser_java") {
+     "//base/version_info/android:version_constants_java",
+     "//build/android:build_java",
+     "//cc/mojom:mojom_java",
++    "//components/adblock/android:adblock_controller_java",
+     "//components/android_autofill/browser:java",
+     "//components/autofill/android:autofill_java",
+     "//components/background_task_scheduler:background_task_scheduler_task_ids_java",
+@@ -978,6 +983,8 @@ android_assets("locale_pak_assets") {
+ 
+ repack("repack_pack") {
+   sources = [
++    "$root_gen_dir/components/adblock/core/resources/adblock_resources.pak",
++    "$root_gen_dir/components/adblock_internals_resources.pak",
+     "$root_gen_dir/content/content_resources.pak",
+     "$root_gen_dir/content/histograms_resources.pak",
+     "$root_gen_dir/net/net_resources.pak",
+@@ -991,6 +998,8 @@ repack("repack_pack") {
+     ":generate_components_resources",
+     ":generate_mojo_resources",
+     ":generate_webui_resources",
++    "//components/adblock/content/resources/adblock_internals:resources",
++    "//components/adblock/core/resources:adblock_resources",
+     "//content:content_resources",
+     "//content/browser/resources/histograms:resources",
+     "//net:net_resources",
+diff --git a/android_webview/browser/BUILD.gn b/android_webview/browser/BUILD.gn
+index 7efcfb758c..f4f5739723 100644
+--- a/android_webview/browser/BUILD.gn
++++ b/android_webview/browser/BUILD.gn
+@@ -1,6 +1,9 @@
+ # Copyright 2019 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
++#
++# This source code is a part of eyeo Chromium SDK.
++# Use of this source code is governed by the GPLv3 that can be found in the components/adblock/LICENSE file.
+ 
+ import("//build/config/android/rules.gni")
+ import("//components/spellcheck/spellcheck_build_features.gni")
+@@ -21,6 +24,8 @@ java_cpp_enum("browser_enums") {
+ 
+ source_set("browser") {
+   sources = [
++    "adblock/adblock_aw_content_browser_client.cc",
++    "adblock/adblock_aw_content_browser_client.h",
+     "android_protocol_handler.cc",
+     "android_protocol_handler.h",
+     "aw_apk_type.h",
+@@ -228,6 +233,10 @@ source_set("browser") {
+     "//android_webview/common:mojom",
+     "//android_webview/proto:aw_variations_seed_proto",
+     "//base",
++    "//components/adblock/android:java_bindings",
++    "//components/adblock/android:jni_headers",
++    "//components/adblock/content:browser",
++    "//components/adblock/core/converter",
+     "//components/android_autofill/browser:android",
+     "//components/autofill/content/browser",
+     "//components/cdm/browser",
+diff --git a/android_webview/browser/adblock/README.md b/android_webview/browser/adblock/README.md
+new file mode 100644
+index 0000000000..f5aba84157
+--- /dev/null
++++ b/android_webview/browser/adblock/README.md
+@@ -0,0 +1,3 @@
++This folder contains the OS-agnostic, Android Webview-specific source code of eyeo Chromium SDK.
++
++For the full documentation, refer to [components/adblock](/components/adblock).
+diff --git a/android_webview/browser/adblock/adblock_aw_content_browser_client.cc b/android_webview/browser/adblock/adblock_aw_content_browser_client.cc
+new file mode 100644
+index 0000000000..fc021682a8
+--- /dev/null
++++ b/android_webview/browser/adblock/adblock_aw_content_browser_client.cc
+@@ -0,0 +1,86 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include "android_webview/browser/adblock/adblock_aw_content_browser_client.h"
++
++#include "android_webview/browser/aw_browser_context.h"
++#include "content/public/browser/web_ui_controller_interface_binder.h"
++
++namespace android_webview {
++
++AdblockAwContentBrowserClient::AdblockAwContentBrowserClient(
++    AwFeatureListCreator* aw_feature_list_creator)
++    : adblock::AdblockContentBrowserClient<AwContentBrowserClient>(
++          aw_feature_list_creator) {}
++
++bool AdblockAwContentBrowserClient::CanCreateWindow(
++    content::RenderFrameHost* opener,
++    const GURL& opener_url,
++    const GURL& opener_top_level_frame_url,
++    const url::Origin& source_origin,
++    content::mojom::WindowContainerType container_type,
++    const GURL& target_url,
++    const content::Referrer& referrer,
++    const std::string& frame_name,
++    WindowOpenDisposition disposition,
++    const blink::mojom::WindowFeatures& features,
++    bool user_gesture,
++    bool opener_suppressed,
++    bool* no_javascript_access) {
++  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
++  DCHECK(opener);
++
++  if (IsFilteringNeeded(GetBrowserContext(opener))) {
++    content::WebContents* web_contents =
++        content::WebContents::FromRenderFrameHost(opener);
++    auto* subscription_service =
++        adblock::SubscriptionServiceFactory::GetForBrowserContext(
++            GetBrowserContext(opener));
++    GURL popup_url(target_url);
++    web_contents->GetPrimaryMainFrame()->GetProcess()->FilterURL(false,
++                                                                 &popup_url);
++    auto* classification_runner =
++        adblock::ResourceClassificationRunnerFactory::GetForBrowserContext(
++            GetBrowserContext(opener));
++    const auto popup_blocking_decision =
++        classification_runner->ShouldBlockPopup(
++            subscription_service->GetCurrentSnapshot(), popup_url, opener);
++    if (popup_blocking_decision == adblock::FilterMatchResult::kAllowRule) {
++      return true;
++    }
++    if (popup_blocking_decision == adblock::FilterMatchResult::kBlockRule) {
++      return false;
++    }
++    // Otherwise, if eyeo adblocking is disabled or there is no rule that
++    // explicitly allows or blocks a popup, fall back on Chromium's built-in
++    // popup blocker.
++    DCHECK(popup_blocking_decision == adblock::FilterMatchResult::kDisabled ||
++           popup_blocking_decision == adblock::FilterMatchResult::kNoRule);
++  }
++
++  return AwContentBrowserClient::CanCreateWindow(
++      opener, opener_url, opener_top_level_frame_url, source_origin,
++      container_type, target_url, referrer, frame_name, disposition, features,
++      user_gesture, opener_suppressed, no_javascript_access);
++}
++
++content::BrowserContext* AdblockAwContentBrowserClient::GetBrowserContext(
++    content::RenderFrameHost* /*frame*/) {
++  return android_webview::AwBrowserContext::GetDefault();
++}
++
++}  // namespace android_webview
+diff --git a/android_webview/browser/adblock/adblock_aw_content_browser_client.h b/android_webview/browser/adblock/adblock_aw_content_browser_client.h
+new file mode 100644
+index 0000000000..d340b73632
+--- /dev/null
++++ b/android_webview/browser/adblock/adblock_aw_content_browser_client.h
+@@ -0,0 +1,55 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef ANDROID_WEBVIEW_BROWSER_ADBLOCK_ADBLOCK_AW_CONTENT_BROWSER_CLIENT_H_
++#define ANDROID_WEBVIEW_BROWSER_ADBLOCK_ADBLOCK_AW_CONTENT_BROWSER_CLIENT_H_
++
++#include "components/adblock/content/browser/adblock_content_browser_client.h"
++
++#include "android_webview/browser/aw_content_browser_client.h"
++
++namespace android_webview {
++
++class AdblockAwContentBrowserClient
++    : public adblock::AdblockContentBrowserClient<AwContentBrowserClient> {
++ public:
++  // |aw_feature_list_creator| should not be null.
++  explicit AdblockAwContentBrowserClient(
++      AwFeatureListCreator* aw_feature_list_creator);
++
++  bool CanCreateWindow(content::RenderFrameHost* opener,
++                       const GURL& opener_url,
++                       const GURL& opener_top_level_frame_url,
++                       const url::Origin& source_origin,
++                       content::mojom::WindowContainerType container_type,
++                       const GURL& target_url,
++                       const content::Referrer& referrer,
++                       const std::string& frame_name,
++                       WindowOpenDisposition disposition,
++                       const blink::mojom::WindowFeatures& features,
++                       bool user_gesture,
++                       bool opener_suppressed,
++                       bool* no_javascript_access) override;
++
++ private:
++  content::BrowserContext* GetBrowserContext(
++      content::RenderFrameHost* frame) override;
++};
++
++}  // namespace android_webview
++
++#endif  // ANDROID_WEBVIEW_BROWSER_ADBLOCK_ADBLOCK_AW_CONTENT_BROWSER_CLIENT_H_
+diff --git a/android_webview/browser/aw_browser_context.cc b/android_webview/browser/aw_browser_context.cc
+index ca1655ca2c..b61390cf0c 100644
+--- a/android_webview/browser/aw_browser_context.cc
++++ b/android_webview/browser/aw_browser_context.cc
+@@ -1,6 +1,10 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
++//
++// This source code is a part of eyeo Chromium SDK.
++// Use of this source code is governed by the GPLv3 that can be found in the
++// components/adblock/LICENSE file.
+ 
+ #include "android_webview/browser/aw_browser_context.h"
+ 
+@@ -42,6 +46,7 @@
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/task/thread_pool.h"
+ #include "base/threading/thread_restrictions.h"
++#include "components/adblock/core/common/adblock_prefs.h"
+ #include "components/autofill/core/browser/autocomplete_history_manager.h"
+ #include "components/autofill/core/common/autofill_prefs.h"
+ #include "components/cdm/browser/media_drm_storage_impl.h"
+@@ -249,6 +254,7 @@ AwBrowserContext::UpdateServiceWorkerXRequestedWithAllowListOriginMatcher(
+ 
+ // static
+ void AwBrowserContext::RegisterPrefs(PrefRegistrySimple* registry) {
++  adblock::common::prefs::RegisterProfilePrefs(registry);
+   safe_browsing::RegisterProfilePrefs(registry);
+ 
+   // Register the Autocomplete Data Retention Policy pref.
+@@ -292,6 +298,11 @@ void AwBrowserContext::CreateUserPrefService() {
+   // Persisted to ensure client hints can be sent on next page load.
+   persistent_prefs.insert(prefs::kClientHintsCachedPerOriginMap);
+ 
++  // These prefs go in the JsonPrefStore, and will persist across runs.
++  for (auto& pref_name : adblock::common::prefs::GetPrefs()) {
++    persistent_prefs.insert(pref_name.data());
++  }
++
+   pref_service_factory.set_user_prefs(base::MakeRefCounted<SegregatedPrefStore>(
+       base::MakeRefCounted<InMemoryPrefStore>(),
+       base::MakeRefCounted<JsonPrefStore>(GetPrefStorePath()),
+@@ -323,6 +334,7 @@ void AwBrowserContext::CreateUserPrefService() {
+ 
+   if (IsDefaultBrowserContext()) {
+     MigrateLocalStatePrefs();
++    MigrateEyeoLocalStatePrefs();
+   }
+ 
+   user_prefs::UserPrefs::Set(this, user_pref_service_.get());
+@@ -339,6 +351,17 @@ void AwBrowserContext::MigrateLocalStatePrefs() {
+   local_state->ClearPref(cdm::prefs::kMediaDrmStorage);
+ }
+ 
++void AwBrowserContext::MigrateEyeoLocalStatePrefs() {
++  PrefService* local_state = AwBrowserProcess::GetInstance()->local_state();
++  for (auto& pref_name : adblock::common::prefs::GetPrefs()) {
++    if (local_state->HasPrefPath(pref_name.data())) {
++      user_pref_service_->Set(pref_name.data(),
++                              local_state->GetValue(pref_name.data()));
++      local_state->ClearPref(pref_name.data());
++    }
++  }
++}
++
+ // static
+ std::vector<std::string> AwBrowserContext::GetAuthSchemes() {
+   // In Chrome this is configurable via the AuthSchemes policy. For WebView
+diff --git a/android_webview/browser/aw_browser_context.h b/android_webview/browser/aw_browser_context.h
+index 21c242148b..3c19504904 100644
+--- a/android_webview/browser/aw_browser_context.h
++++ b/android_webview/browser/aw_browser_context.h
+@@ -171,6 +171,7 @@ class AwBrowserContext : public content::BrowserContext,
+   friend class AwBrowserContextIoThreadHandle;
+   void CreateUserPrefService();
+   void MigrateLocalStatePrefs();
++  void MigrateEyeoLocalStatePrefs();
+ 
+   // Return the IO thread client for this browser context that should be used
+   // by service workers. This method should never be called except by
+diff --git a/android_webview/browser/aw_browser_main_parts.cc b/android_webview/browser/aw_browser_main_parts.cc
+index 06090a96a7..7dae11332e 100644
+--- a/android_webview/browser/aw_browser_main_parts.cc
++++ b/android_webview/browser/aw_browser_main_parts.cc
+@@ -1,6 +1,10 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
++//
++// This source code is a part of eyeo Chromium SDK.
++// Use of this source code is governed by the GPLv3 that can be found in the
++// components/adblock/LICENSE file.
+ 
+ #include "android_webview/browser/aw_browser_main_parts.h"
+ 
+@@ -38,6 +42,7 @@
+ #include "base/message_loop/message_pump_type.h"
+ #include "base/path_service.h"
+ #include "base/task/current_thread.h"
++#include "components/adblock/content/browser/adblock_web_ui_controller_factory.h"
+ #include "components/crash/content/browser/child_exit_observer_android.h"
+ #include "components/crash/core/common/crash_key.h"
+ #include "components/embedder_support/android/metrics/memory_metrics_logger.h"
+@@ -304,6 +309,8 @@ int AwBrowserMainParts::PreMainMessageLoopRun() {
+   TRACE_EVENT0("startup", "AwBrowserMainParts::PreMainMessageLoopRun");
+   AwBrowserProcess::GetInstance()->PreMainMessageLoopRun();
+   browser_client_->InitBrowserContext();
++  content::WebUIControllerFactory::RegisterFactory(
++      adblock::AdblockWebUIControllerFactory::GetInstance());
+   content::WebUIControllerFactory::RegisterFactory(
+       AwWebUIControllerFactory::GetInstance());
+   content::RenderFrameHost::AllowInjectingJavaScript();
+diff --git a/android_webview/browser/aw_contents.cc b/android_webview/browser/aw_contents.cc
+index d75e753e16..3e208d9a0c 100644
+--- a/android_webview/browser/aw_contents.cc
++++ b/android_webview/browser/aw_contents.cc
+@@ -1,6 +1,10 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
++//
++// This source code is a part of eyeo Chromium SDK.
++// Use of this source code is governed by the GPLv3 that can be found in the
++// components/adblock/LICENSE file.
+ 
+ #include "android_webview/browser/aw_contents.h"
+ 
+@@ -65,6 +69,13 @@
+ #include "base/threading/thread_restrictions.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/trace_event/typed_macros.h"
++#include "components/adblock/content/browser/adblock_webcontents_observer.h"
++#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
++#include "components/adblock/content/browser/factories/element_hider_factory.h"
++#include "components/adblock/content/browser/factories/resource_classification_runner_factory.h"
++#include "components/adblock/content/browser/factories/session_stats_factory.h"
++#include "components/adblock/content/browser/factories/sitekey_storage_factory.h"
++#include "components/adblock/content/browser/factories/subscription_service_factory.h"
+ #include "components/android_autofill/browser/android_autofill_client.h"
+ #include "components/android_autofill/browser/android_autofill_manager.h"
+ #include "components/android_autofill/browser/android_autofill_provider.h"
+@@ -265,6 +276,21 @@ AwContents::AwContents(std::unique_ptr<WebContents> web_contents)
+   permission_request_handler_ =
+       std::make_unique<PermissionRequestHandler>(this, web_contents_.get());
+ 
++  auto* browser_context = android_webview::AwBrowserContext::GetDefault();
++  adblock::ResourceClassificationRunnerFactory::GetForBrowserContext(
++      browser_context);
++  adblock::AdblockTelemetryServiceFactory::GetForBrowserContext(
++      browser_context);
++  adblock::SessionStatsFactory::GetForBrowserContext(browser_context);
++  adblock::SitekeyStorageFactory::GetForBrowserContext(browser_context);
++  AdblockWebContentObserver::CreateForWebContents(
++      web_contents_.get(),
++      adblock::SubscriptionServiceFactory::GetForBrowserContext(
++          browser_context),
++      adblock::ElementHiderFactory::GetForBrowserContext(browser_context),
++      adblock::SitekeyStorageFactory::GetForBrowserContext(browser_context),
++      std::make_unique<adblock::FrameHierarchyBuilder>());
++
+   content::SynchronousCompositor::SetClientForWebContents(
+       web_contents_.get(), &browser_view_renderer_);
+   AwContentsLifecycleNotifier::GetInstance().OnWebViewCreated(this);
+diff --git a/android_webview/browser/aw_feature_list_creator.cc b/android_webview/browser/aw_feature_list_creator.cc
+index 2242830861..054754e434 100644
+--- a/android_webview/browser/aw_feature_list_creator.cc
++++ b/android_webview/browser/aw_feature_list_creator.cc
+@@ -1,6 +1,10 @@
+ // Copyright 2017 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
++//
++// This source code is a part of eyeo Chromium SDK.
++// Use of this source code is governed by the GPLv3 that can be found in the
++// components/adblock/LICENSE file.
+ 
+ #include "android_webview/browser/aw_feature_list_creator.h"
+ 
+@@ -31,6 +35,7 @@
+ #include "base/strings/string_split.h"
+ #include "base/time/time.h"
+ #include "base/trace_event/trace_event.h"
++#include "components/adblock/core/common/adblock_prefs.h"
+ #include "components/autofill/core/common/autofill_prefs.h"
+ #include "components/embedder_support/android/metrics/android_metrics_service_client.h"
+ #include "components/embedder_support/origin_trials/origin_trial_prefs.h"
+@@ -167,6 +172,11 @@ std::unique_ptr<PrefService> AwFeatureListCreator::CreatePrefService() {
+   AwMetricsServiceClient::RegisterMetricsPrefs(pref_registry.get());
+   variations::VariationsService::RegisterPrefs(pref_registry.get());
+ 
++  // TODO(DPD-2251): Revert this once we migrate all prefs from local to user
++  // state in AwBrowserContext, meaning when all users are on version v119 or
++  // newer.
++  adblock::common::prefs::RegisterProfilePrefs(pref_registry.get());
++
+   embedder_support::OriginTrialPrefs::RegisterPrefs(pref_registry.get());
+   AwBrowserProcess::RegisterNetworkContextLocalStatePrefs(pref_registry.get());
+   AwBrowserProcess::RegisterEnterpriseAuthenticationAppLinkPolicyPref(
+@@ -180,6 +190,13 @@ std::unique_ptr<PrefService> AwFeatureListCreator::CreatePrefService() {
+   for (const char* const pref_name : kPersistentPrefsAllowlist)
+     persistent_prefs.insert(pref_name);
+ 
++  // TODO(DPD-2251): Revert this once we migrate all prefs from local to user
++  // state in AwBrowserContext, meaning when all users are on version v119 or
++  // newer.
++  for (auto& pref_name : adblock::common::prefs::GetPrefs()) {
++    persistent_prefs.insert(pref_name.data());
++  }
++
+   persistent_prefs.insert(std::string(metrics::prefs::kMetricsLastSeenPrefix) +
+                           kBrowserMetricsName);
+   persistent_prefs.insert(std::string(metrics::prefs::kMetricsLastSeenPrefix) +
+diff --git a/android_webview/javatests/assets/adblock/adblock_frame_with_ad.html b/android_webview/javatests/assets/adblock/adblock_frame_with_ad.html
+new file mode 100644
+index 0000000000..9c02934537
+--- /dev/null
++++ b/android_webview/javatests/assets/adblock/adblock_frame_with_ad.html
+@@ -0,0 +1,25 @@
++<!--
++  This file is part of eyeo Chromium SDK,
++  Copyright (C) 2006-present eyeo GmbH
++
++  eyeo Chromium SDK is free software: you can redistribute it and/or modify
++  it under the terms of the GNU General Public License version 3 as
++  published by the Free Software Foundation.
++
++  eyeo Chromium SDK is distributed in the hope that it will be useful,
++  but WITHOUT ANY WARRANTY; without even the implied warranty of
++  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++  GNU General Public License for more details.
++
++  You should have received a copy of the GNU General Public License
++  along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++-->
++
++<!DOCTYPE html>
++<html>
++<head>
++</head>
++<body>
++  <img id='adresource' src='https://example.com/ad.png' />
++</body>
++</html>
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AdblockControllerTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AdblockControllerTest.java
+new file mode 100644
+index 0000000000..9c5543e015
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AdblockControllerTest.java
+@@ -0,0 +1,52 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.AwBrowserContext;
++import org.chromium.android_webview.AwContents;
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.android_webview.test.TestAwContentsClient;
++import org.chromium.components.adblock.AdblockController;
++import org.chromium.components.adblock.AdblockControllerTestBase;
++import org.chromium.content_public.browser.test.util.TestThreadUtils;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class AdblockControllerTest extends AdblockControllerTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private TestAwContentsClient mContentsClient;
++    private AwContents mAwContents;
++
++    @Before
++    public void setUp() {
++        mContentsClient = new TestAwContentsClient();
++        mAwContents =
++                mActivityTestRule
++                        .createAwTestContainerViewOnMainSync(mContentsClient)
++                        .getAwContents();
++        TestThreadUtils.runOnUiThreadBlocking(
++                () -> {
++                    mAdblockController =
++                            AdblockController.getInstance(AwBrowserContext.getDefault());
++                });
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AssetsFileTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AssetsFileTest.java
+new file mode 100644
+index 0000000000..c4c01351f8
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/AssetsFileTest.java
+@@ -0,0 +1,83 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import androidx.test.filters.LargeTest;
++
++import org.junit.After;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.base.test.util.Feature;
++
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.TimeUnit;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class AssetsFileTest {
++    private static final String ASSET_FILE_URL = "file:///android_asset/adblock_frame_with_ad.html";
++    private static final String AD_URL = "https://example.com/ad.png";
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testBlockingWebAdLoadedByAssetIframe() throws Exception {
++        mHelper.addCustomFilter("ad.png");
++        final CountDownLatch countDownLatch =
++                mHelper.setOnAdMatchedExpectations(new HashSet<>(Arrays.asList(AD_URL)), null);
++        mHelper.loadUrl(ASSET_FILE_URL);
++        // Wait with 10 seconds max timeout
++        countDownLatch.await(10, TimeUnit.SECONDS);
++        Assert.assertEquals(1, mHelper.numBlocked());
++        Assert.assertEquals(0, mHelper.numAllowed());
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testAllowingWebAdLoadedByAssetIframe() throws Exception {
++        mHelper.addCustomFilter("ad.png");
++        mHelper.addCustomFilter("@@" + ASSET_FILE_URL + "$document");
++        final CountDownLatch countDownLatch =
++                mHelper.setOnAdMatchedExpectations(null, new HashSet<>(Arrays.asList(AD_URL)));
++        mHelper.loadUrl(ASSET_FILE_URL);
++        // Wait with 10 seconds max timeout
++        countDownLatch.await(10, TimeUnit.SECONDS);
++        Assert.assertEquals(0, mHelper.numBlocked());
++        Assert.assertEquals(1, mHelper.numAllowed());
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/DefaultSettingsTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/DefaultSettingsTest.java
+new file mode 100644
+index 0000000000..7e689a014b
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/DefaultSettingsTest.java
+@@ -0,0 +1,52 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.AwBrowserContext;
++import org.chromium.android_webview.AwContents;
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.android_webview.test.TestAwContentsClient;
++import org.chromium.components.adblock.DefaultSettingsTestBase;
++import org.chromium.content_public.browser.BrowserContextHandle;
++import org.chromium.content_public.browser.test.util.TestThreadUtils;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class DefaultSettingsTest extends DefaultSettingsTestBase {
++    @Rule
++    public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private TestAwContentsClient mContentsClient;
++    private AwContents mAwContents;
++
++    @Before
++    public void setUp() {
++        mContentsClient = new TestAwContentsClient();
++        mAwContents = mActivityTestRule.createAwTestContainerViewOnMainSync(mContentsClient)
++                              .getAwContents();
++    }
++
++    @Override
++    protected BrowserContextHandle getBrowserContext() {
++        return TestThreadUtils.runOnUiThreadBlockingNoException(
++                () -> { return AwBrowserContext.getDefault(); });
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/FilteringConfigurationTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/FilteringConfigurationTest.java
+new file mode 100644
+index 0000000000..89babeb95c
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/FilteringConfigurationTest.java
+@@ -0,0 +1,68 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.AwBrowserContext;
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.base.test.util.CommandLineFlags;
++import org.chromium.components.adblock.FilteringConfigurationTestBase;
++import org.chromium.content_public.browser.BrowserContextHandle;
++import org.chromium.content_public.browser.test.util.TestThreadUtils;
++import org.chromium.content_public.common.ContentSwitches;
++
++import java.util.concurrent.TimeoutException;
++
++@RunWith(AwJUnit4ClassRunner.class)
++@CommandLineFlags.Add({ContentSwitches.HOST_RESOLVER_RULES + "=MAP * 127.0.0.1"})
++public class FilteringConfigurationTest extends FilteringConfigurationTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Override
++    protected BrowserContextHandle getBrowserContext() {
++        return TestThreadUtils.runOnUiThreadBlockingNoException(
++                () -> {
++                    return AwBrowserContext.getDefault();
++                });
++    }
++
++    @Override
++    protected void loadTestUrl() throws Exception {
++        mHelper.loadUrl(mTestUrl);
++    }
++
++    @Before
++    public void setUp() throws TimeoutException {
++        mHelper.setUp(mActivityTestRule);
++        mHelper.setActivityTestRule(mActivityTestRule);
++        super.setUp(mHelper, "/android_webview/test/data/adblock/innermost_frame.html");
++    }
++
++    @After
++    @Override
++    public void tearDown() {
++        mHelper.tearDown();
++        super.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCircumventionTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCircumventionTest.java
+new file mode 100644
+index 0000000000..39852694a2
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCircumventionTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesCircumventionTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesCircumventionTest extends TestPagesCircumventionTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCspTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCspTest.java
+new file mode 100644
+index 0000000000..124ccaacdb
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesCspTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesCspTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesCspTest extends TestPagesCspTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuInvTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuInvTest.java
+new file mode 100644
+index 0000000000..f12cdbd377
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuInvTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesElemhideEmuInvTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesElemhideEmuInvTest extends TestPagesElemhideEmuInvTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuTest.java
+new file mode 100644
+index 0000000000..b9ae815804
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesElemhideEmuTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesElemhideEmuTest extends TestPagesElemhideEmuTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideTest.java
+new file mode 100644
+index 0000000000..19e87e6ac9
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesElemhideTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesElemhideTest extends TestPagesElemhideTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesExceptionTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesExceptionTest.java
+new file mode 100644
+index 0000000000..8f416878cc
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesExceptionTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesExceptionTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesExceptionTest extends TestPagesExceptionTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesFilterTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesFilterTest.java
+new file mode 100644
+index 0000000000..9f3f9bc37e
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesFilterTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesFilterTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesFilterTest extends TestPagesFilterTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHeaderFilterTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHeaderFilterTest.java
+new file mode 100644
+index 0000000000..5f86d6fffe
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHeaderFilterTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesHeaderFilterTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesHeaderFilterTest extends TestPagesHeaderFilterTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHelper.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHelper.java
+new file mode 100644
+index 0000000000..af3a427788
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesHelper.java
+@@ -0,0 +1,76 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import android.annotation.SuppressLint;
++
++import org.junit.Assert;
++
++import org.chromium.android_webview.AwBrowserContext;
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwTestContainerView;
++import org.chromium.android_webview.test.TestAwContentsClient;
++import org.chromium.components.adblock.TestPagesHelperBase;
++import org.chromium.content_public.browser.BrowserContextHandle;
++import org.chromium.content_public.browser.WebContents;
++import org.chromium.content_public.browser.test.util.TestThreadUtils;
++
++public class TestPagesHelper extends TestPagesHelperBase {
++    private AwActivityTestRule mActivityTestRule;
++    private AwTestContainerView mTestContainerView;
++    private TestAwContentsClient mContentsClient;
++
++    public void setActivityTestRule(AwActivityTestRule activityTestRule) {
++        mActivityTestRule = activityTestRule;
++    }
++
++    public void setUp(final AwActivityTestRule activityRule) {
++        mActivityTestRule = activityRule;
++        mContentsClient = new TestAwContentsClient();
++        mTestContainerView = mActivityTestRule.createAwTestContainerViewOnMainSync(mContentsClient);
++        AwActivityTestRule.enableJavaScriptOnUiThread(mTestContainerView.getAwContents());
++        super.setUp();
++    }
++
++    @SuppressLint("VisibleForTests")
++    @Override
++    public WebContents getWebContents() {
++        return mTestContainerView.getAwContents().getWebContents();
++    }
++
++    @Override
++    public BrowserContextHandle getBrowserContext() {
++        return TestThreadUtils.runOnUiThreadBlockingNoException(
++                () -> {
++                    return AwBrowserContext.getDefault();
++                });
++    }
++
++    @Override
++    public void loadUrl(final String url) throws Exception {
++        mActivityTestRule.loadUrlSync(
++                mTestContainerView.getAwContents(), mContentsClient.getOnPageFinishedHelper(), url);
++        if (url.contains(TESTPAGES_DOMAIN)) {
++            Assert.assertTrue(
++                    mActivityTestRule
++                            .getTitleOnUiThread(mTestContainerView.getAwContents())
++                            .contains("ABP Test Pages"));
++        }
++        mActivityTestRule.waitForVisualStateCallback(mTestContainerView.getAwContents());
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesInlineCssTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesInlineCssTest.java
+new file mode 100644
+index 0000000000..6d515bbf6f
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesInlineCssTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesInlineCssTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesInlineCssTest extends TestPagesInlineCssTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRemoveTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRemoveTest.java
+new file mode 100644
+index 0000000000..a29810cfb6
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRemoveTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesRemoveTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesRemoveTest extends TestPagesRemoveTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRewriteTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRewriteTest.java
+new file mode 100644
+index 0000000000..c015a456b9
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesRewriteTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesRewriteTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesRewriteTest extends TestPagesRewriteTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSiteKeyTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSiteKeyTest.java
+new file mode 100644
+index 0000000000..d979ad911b
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSiteKeyTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesSiteKeyTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesSiteKeyTest extends TestPagesSiteKeyTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSnippetsTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSnippetsTest.java
+new file mode 100644
+index 0000000000..e8e2b37c60
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesSnippetsTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesSnippetsTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesSnippetsTest extends TestPagesSnippetsTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWebsocketTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWebsocketTest.java
+new file mode 100644
+index 0000000000..70b4334bef
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWebsocketTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesWebsocketTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesWebsocketTest extends TestPagesWebsocketTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWildcardDomainTest.java b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWildcardDomainTest.java
+new file mode 100644
+index 0000000000..541ea4527c
+--- /dev/null
++++ b/android_webview/javatests/src/org/chromium/android_webview/test/adblock/TestPagesWildcardDomainTest.java
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.android_webview.test.adblock;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Rule;
++import org.junit.runner.RunWith;
++
++import org.chromium.android_webview.test.AwActivityTestRule;
++import org.chromium.android_webview.test.AwJUnit4ClassRunner;
++import org.chromium.components.adblock.TestPagesWildcardDomainTestBase;
++
++@RunWith(AwJUnit4ClassRunner.class)
++public class TestPagesWildcardDomainTest extends TestPagesWildcardDomainTestBase {
++    @Rule public AwActivityTestRule mActivityTestRule = new AwActivityTestRule();
++    private final TestPagesHelper mHelper = new TestPagesHelper();
++
++    @Before
++    public void setUp() {
++        mHelper.setUp(mActivityTestRule);
++        super.setUp(mHelper);
++    }
++
++    @After
++    public void tearDown() {
++        mHelper.tearDown();
++    }
++}
+diff --git a/android_webview/lib/aw_main_delegate.cc b/android_webview/lib/aw_main_delegate.cc
+index ac664be2b1..9a68f303e1 100644
+--- a/android_webview/lib/aw_main_delegate.cc
++++ b/android_webview/lib/aw_main_delegate.cc
+@@ -1,11 +1,16 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
++//
++// This source code is a part of eyeo Chromium SDK.
++// Use of this source code is governed by the GPLv3 that can be found in the
++// components/adblock/LICENSE file.
+ 
+ #include "android_webview/lib/aw_main_delegate.h"
+ 
+ #include <memory>
+ 
++#include "android_webview/browser/adblock/adblock_aw_content_browser_client.h"
+ #include "android_webview/browser/aw_content_browser_client.h"
+ #include "android_webview/browser/aw_media_url_interceptor.h"
+ #include "android_webview/browser/gfx/aw_draw_fn_impl.h"
+@@ -351,8 +356,8 @@ content::ContentClient* AwMainDelegate::CreateContentClient() {
+ content::ContentBrowserClient* AwMainDelegate::CreateContentBrowserClient() {
+   DCHECK(!aw_feature_list_creator_);
+   aw_feature_list_creator_ = std::make_unique<AwFeatureListCreator>();
+-  content_browser_client_ =
+-      std::make_unique<AwContentBrowserClient>(aw_feature_list_creator_.get());
++  content_browser_client_ = std::make_unique<AdblockAwContentBrowserClient>(
++      aw_feature_list_creator_.get());
+   return content_browser_client_.get();
+ }
+ 
+diff --git a/android_webview/test/BUILD.gn b/android_webview/test/BUILD.gn
+index f0f7169038..c0af89b967 100644
+--- a/android_webview/test/BUILD.gn
++++ b/android_webview/test/BUILD.gn
+@@ -1,6 +1,9 @@
+ # Copyright 2015 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
++#
++# This source code is a part of eyeo Chromium SDK.
++# Use of this source code is governed by the GPLv3 that can be found in the components/adblock/LICENSE file.
+ 
+ import("//android_webview/system_webview_apk_tmpl.gni")
+ import("//android_webview/test/shared.gni")
+@@ -191,6 +194,7 @@ android_assets("webview_instrumentation_apk_assets") {
+   ]
+ 
+   sources = [
++    "../javatests/assets/adblock/adblock_frame_with_ad.html",
+     "../javatests/assets/empty_file.js",
+     "../javatests/assets/hello.html",
+     "../javatests/assets/print_hello.js",
+@@ -274,6 +278,8 @@ base_webview_instrumentation_test_apk("webview_instrumentation_test_apk") {
+   apk_under_test = ":webview_instrumentation_apk"
+ 
+   deps = [
++    "//components/adblock/android:adblock_controller_java",
++    "//components/adblock/android:adblock_java_tests_base",
+     "//components/android_autofill/browser:java",
+     "//components/android_autofill/browser/test_support:java",
+     "//components/autofill/android:autofill_java",
+@@ -420,6 +426,26 @@ base_webview_instrumentation_test_apk("webview_instrumentation_test_apk") {
+     "../javatests/src/org/chromium/android_webview/test/WebViewFindApisTestRule.java",
+     "../javatests/src/org/chromium/android_webview/test/WebViewModalDialogOverrideTest.java",
+     "../javatests/src/org/chromium/android_webview/test/XRWOriginTrialTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/AdblockControllerTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/AssetsFileTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/DefaultSettingsTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/FilteringConfigurationTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesCircumventionTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesCspTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuInvTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideEmuTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesElemhideTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesExceptionTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesFilterTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesHeaderFilterTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesHelper.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesInlineCssTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesRemoveTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesRewriteTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesSiteKeyTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesSnippetsTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesWebsocketTest.java",
++    "../javatests/src/org/chromium/android_webview/test/adblock/TestPagesWildcardDomainTest.java",
+     "../javatests/src/org/chromium/android_webview/test/common/services/ServiceConnectionDelayRecorderTest.java",
+     "../javatests/src/org/chromium/android_webview/test/common/variations/VariationsUtilsTest.java",
+     "../javatests/src/org/chromium/android_webview/test/component_updater/EmbeddedComponentLoaderTest.java",
+diff --git a/android_webview/ui/grit_resources_allowlist.txt b/android_webview/ui/grit_resources_allowlist.txt
+index 6a133046d3..7dce373758 100644
+--- a/android_webview/ui/grit_resources_allowlist.txt
++++ b/android_webview/ui/grit_resources_allowlist.txt
+@@ -15,3 +15,14 @@ IDR_WEBUI_JS_PROMISE_RESOLVER_JS
+ IDR_WEBUI_MOJO_MOJO_PUBLIC_JS_BINDINGS_JS
+ IDR_MOJO_BINDINGS_JS
+ IDR_ANDROID_SUPERVISED_USER_URL_BLOCKED_HTML
++IDR_ADBLOCK_FLATBUFFER_EASYLIST
++IDR_ADBLOCK_FLATBUFFER_EXCEPTIONRULES
++IDR_ADBLOCK_FLATBUFFER_ANTICV
++IDR_ADBLOCK_ELEMHIDE_JS
++IDR_ADBLOCK_ELEMHIDE_FOR_SELECTOR_JS
++IDR_ADBLOCK_ELEMHIDE_EMU_JS
++IDR_ADBLOCK_SNIPPETS_JS
++IDR_ADBLOCK_SNIPPETS_XPATH3_DEP_JS
++IDR_ADBLOCK_INTERNALS_ADBLOCK_INTERNALS_HTML
++IDR_ADBLOCK_INTERNALS_ADBLOCK_INTERNALS_JS
++IDR_ADBLOCK_INTERNALS_ADBLOCK_INTERNALS_MOJOM_WEBUI_JS
+-- 
+2.49.0
+

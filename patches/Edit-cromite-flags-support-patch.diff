@@ -1,0 +1,91 @@
+--- a/Add-cromite-flags-support.patch
++++ b/Add-cromite-flags-support.patch
+@@ -430,10 +430,10 @@
+ diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
+ --- a/chrome/android/java/res/xml/privacy_preferences.xml
+ +++ b/chrome/android/java/res/xml/privacy_preferences.xml
+-@@ -70,6 +70,10 @@ found in the LICENSE file.
+-         android:title="@string/tabgrid_use_icons_title"
+-         android:summary="@string/tabgrid_use_icons_summary"
+-         android:defaultValue="false" />
++@@ -54,6 +54,10 @@ found in the LICENSE file.
++         android:key="do_not_track"
++         android:title="@string/do_not_track_title"
++         android:fragment="org.chromium.chrome.browser.privacy.settings.DoNotTrackSettings" />
+ +    <org.chromium.chrome.browser.about_settings.HyperlinkPreference
+ +        android:key="cromite_flags"
+ +        android:title="@string/cromite_flags_title"
+@@ -494,73 +494,6 @@
+          getActivity().setTitle(R.string.prefs_privacy_security);
+  
+          SettingsUtils.addPreferencesFromResource(this, R.xml.privacy_preferences);
+-diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/SettingsActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/SettingsActivity.java
+---- a/chrome/android/java/src/org/chromium/chrome/browser/settings/SettingsActivity.java
+-+++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/SettingsActivity.java
+-@@ -4,6 +4,7 @@
+- 
+- package org.chromium.chrome.browser.settings;
+- 
+-+import android.app.Activity;
+- import android.annotation.SuppressLint;
+- import android.content.Context;
+- import android.content.Intent;
+-@@ -84,6 +85,7 @@ import org.chromium.chrome.browser.ui.device_lock.MissingDeviceLockLauncher;
+- import org.chromium.chrome.browser.ui.messages.snackbar.INeedSnackbarManager;
+- import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager;
+- import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager.SnackbarManageable;
+-+import org.chromium.chrome.browser.ui.messages.snackbar.Snackbar;
+- import org.chromium.components.browser_ui.bottomsheet.BottomSheetController;
+- import org.chromium.components.browser_ui.bottomsheet.BottomSheetControllerFactory;
+- import org.chromium.components.browser_ui.bottomsheet.ManagedBottomSheetController;
+-@@ -124,6 +126,36 @@ public class SettingsActivity extends ChromeBaseAppCompatActivity
+-         implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
+-                 SnackbarManageable,
+-                 DisplayStyleObserver {
+-+    private static class RequestRestartDelegate implements ChromeBaseSettingsFragment.RequireRestartDelegate {
+-+        private SnackbarManager mSnackbarManager;
+-+        private Activity mActivity;
+-+
+-+        RequestRestartDelegate(SnackbarManager snackbarManager, Activity activity) {
+-+            mSnackbarManager = snackbarManager;
+-+            mActivity = activity;
+-+        }
+-+
+-+        @Override
+-+        public void RequireRestart() {
+-+            Snackbar mSnackbar = Snackbar.make(mActivity.getString(R.string.ui_relaunch_notice),
+-+                new SnackbarManager.SnackbarController() {
+-+                    @Override
+-+                    public void onDismissNoAction(Object actionData) { }
+-+
+-+                    @Override
+-+                    public void onAction(Object actionData) {
+-+                            ApplicationLifetime.terminate(true);
+-+                    }
+-+                }, Snackbar.TYPE_NOTIFICATION, Snackbar.UMA_UNKNOWN)
+-+                .setSingleLine(false)
+-+                .setAction(mActivity.getString(R.string.relaunch),
+-+                        /*actionData*/null)
+-+                .setDuration(/*durationMs*/70000);
+-+            if (!mSnackbarManager.isShowing())
+-+                mSnackbarManager.showSnackbar(mSnackbar);
+-+        }
+-+    }
+-+
+-     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+-     public static final String EXTRA_SHOW_FRAGMENT = "show_fragment";
+- 
+-@@ -377,6 +409,10 @@ public class SettingsActivity extends ChromeBaseAppCompatActivity
+-                 ((AccessibilitySettings) fragment)
+-                     .getDelegate()).setSnackbarManager(mSnackbarManager);
+-         }
+-+        if (fragment instanceof ChromeBaseSettingsFragment) {
+-+            ((ChromeBaseSettingsFragment)fragment).setRequestRestartDelegate(
+-+                new RequestRestartDelegate(mSnackbarManager, this));
+-+        }
+-         if (fragment instanceof ClearBrowsingDataFragment) {
+-             ((ClearBrowsingDataFragment) fragment).setSnackbarManager(mSnackbarManager);
+-         }
+ diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
+ --- a/chrome/browser/about_flags.cc
+ +++ b/chrome/browser/about_flags.cc

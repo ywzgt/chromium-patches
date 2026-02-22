@@ -1,0 +1,151 @@
+From: csagan5 <32685696+csagan5@users.noreply.github.com>
+Date: Mon, 11 Dec 2017 22:42:11 +0100
+Subject: [PATCH] Add search engine
+
+Add a Google search engine that forces languages to English,
+disable from all its searches RLZ and field experiments querystring parameters.
+Add DuckDuckGo Lite
+
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
+---
+ .../search_engine_choice/google_com.png       | Bin 0 -> 1202 bytes
+ ...search_engine_choice_scaled_resources.grdp |   3 +-
+ .../search_engines/prepopulated_engines.json  |  31 ++++++++++++++++++
+ .../search_engine_countries-inc.cc            |   3 ++
+ .../search_engines/search_engine_type.h       |   5 +++
+ 5 files changed, 41 insertions(+), 1 deletion(-)
+ create mode 100755 components/resources/default_100_percent/search_engine_choice/google_com.png
+
+diff --git a/components/resources/default_100_percent/search_engine_choice/google_com.png b/components/resources/default_100_percent/search_engine_choice/google_com.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..fe0140eb208fd477ae54d28c85e77436c2df2492
+GIT binary patch
+literal 1202
+zcmV;j1Wo&iP)<h;3K|Lk000e1NJLTq001BW001Be1^@s6b9#F800001b5ch_0Itp)
+z=>Px#1ZP1_K>z@;j|==^1poj532;bRa{vGi!vFvd!vV){sAK>D1V>3kK~z{ry_a2V
+z6jc<*`(m&v_~e@pqM&a|lu{nF#;;Yh4<yt=YadXo7=u0-wI&1&Bo-|eNWh0J#X?NO
+zwi;-~3MB=kezdVj%o5TDEua=^X1Ci9c6QybIsVU`)7{+8>~?A!f5|^H_ug~Q|ID2`
+zv$I8Bu`Fu|RGrCWnxO$`3`&Z^($|cbDvp(D^9RWuK;jlCP98yQ3_6Ip%O%a+L7v-?
+zq!CKnY3B~+rl4IYq*&5=0~7AY#7mNA-XK>HIhRTL!XWTrObE$bjr5HXGFv~ViFe+h
+z@Qcrp;ag3{Go=(>=cDnrUnlc$6QxJ~lxQ8~G;mlUHtxukJIvFg*J*P5`(!-5ij1d9
+z3JWolAHJvN%!G@`yAl|<9RZGIkDuzI&<kbmW(5=~f1Lg~drGq8fCt|W=bpeoqr_w}
+zj~sGM?p0F_+a;3@yc)#T1{Lw6rtNmVa<`<cNNp8G5A37(H%BSnbqweGDe_vi7BjWG
+zp2)H!n-08E+O0rGi;O9FvxT02OiRcbt658l^ZgR#Br(uO;SJ?<bN{E(lOK3CD|4LR
+ziH7!)iSB*VVLra)WwNHGBqBeS8I`lbz|+JkEav5}mOh0Q8>UqEBATqbCu`1+TxKF7
+z5eo;r*Yol>OIwk-T2HB-Ta?UwcTs4~N{XL6E~5(zy!~9jfV36qUwqjDSc#)ciBc&U
+zU0C4V&jpN0TaoI$TPq-au}VhVdGe#EXPv#IUkJPnE+8pwMe6h-t$@t$+hoKYH=}%N
+z{ZX^x0uujg0WIeeGRtPVfUvX`j$07iAS3R$8Rb)Zzhec|EzmdNg=e(_MtUElWM=N0
+z@QRUf6mV|Pu?N&9obecboHak*wUizWtfh|O9vSscpfBktV01!%HN)G_FCuN5Td}JY
+z>nW!Cjz?%^V4ae$;}r_W$0cHRZpJOD*lTL$8~rgE%>nO9E?@~N(MI?5?Z}!>tET&1
+znn=w4Do)}jt?o!%GiS9q@4tz|9qRW0je~Z#&5fu*WnaDID5Cu9&D4ASyhJ&<JbsNf
+zbp~KKshRU?#1f9>Z&KzAR$)0hv>kHdTCbykX;pmt7ByaIq4vus=*!<u(r3X|dbMXO
+zl>{o(c<G@!dg7D6vITrUq<`1KD+$m0#NGy-yJS4e7ek#6bFV6C-AHA-e|9|k47_%V
+zZ4UJFXZS@sBuDojKj3!MxSAAFX<H>72zE-A9Ps!Rhg-!~2g|Yy0sQr<F=~cr>rZ=V
+zRhzxUvuX304`?tlEVFYU_un|&D|YT6V1-)|3~$cEgU4vgcROfJXDzL6uT)p+>)1rK
+zr?;uSFci5W(K>973w%gy3L`5Kl)3W;xp>(NU-?W>L@_2dK>zt;0CV||>rR}y-*Yd>
+zYVbc|esOq$W1%L@)gQI_fMkoI^+@c8`XK{Ki1?iQ{D`SU4fY#uR*H)L1)<@8Hma|n
+QLjV8(07*qoM6N<$f<sR?VE_OC
+
+literal 0
+HcmV?d00001
+
+diff --git a/components/resources/search_engine_choice_scaled_resources.grdp b/components/resources/search_engine_choice_scaled_resources.grdp
+--- a/components/resources/search_engine_choice_scaled_resources.grdp
++++ b/components/resources/search_engine_choice_scaled_resources.grdp
+@@ -3,8 +3,9 @@
+ <!-- Don't modify it manually -->
+ <grit-part>
+   <if expr="_google_chrome">
+-    <structure type="chrome_scaled_image" name="IDR_GOOGLE_COM_PNG" file="google_chrome/google_search_logo.png" />
++    <structure type="chrome_scaled_image" name="IDR_GOOGLE_COM_PNG" file="search_engine_choice/google_com.png" />
+   </if>
++  <structure type="chrome_scaled_image" name="IDR_GOOGLEEN_PNG" file="search_engine_choice/google_com.png" />
+   <structure type="chrome_scaled_image" name="IDR_AR_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+   <structure type="chrome_scaled_image" name="IDR_AT_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+   <structure type="chrome_scaled_image" name="IDR_AU_YAHOO_COM_PNG" file="search_engine_choice/yahoo_com.png" />
+diff --git a/components/search_engines/prepopulated_engines.json b/components/search_engines/prepopulated_engines.json
+--- a/components/search_engines/prepopulated_engines.json
++++ b/components/search_engines/prepopulated_engines.json
+@@ -113,6 +113,16 @@
+       "id": 92
+     },
+
++    "duckduckgo_light": {
++      "name": "DuckDuckGo Light",
++      "keyword": "duckduckgo.com/lite",
++      "favicon_url": "https://duckduckgo.com/favicon.ico",
++      "search_url": "https://duckduckgo.com/lite/?q={searchTerms}",
++      "suggest_url": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
++      "type": "SEARCH_ENGINE_DUCKDUCKGOLIGHT",
++      "id": 12
++    },
++
+     "ecosia": {
+       "name": "Ecosia",
+       "keyword": "ecosia.org",
+@@ -174,6 +184,27 @@
+       "id": 111
+     },
+
++    "googleen": {
++      "name": "Google in English",
++      "keyword": "googleen",
++      "favicon_url": "https://www.google.com/favicon.ico",
++      "search_url": "{google:baseURL}search?q={searchTerms}&ie={inputEncoding}&hl=en",
++      "suggest_url": "{google:baseSuggestURL}search?client={google:suggestClient}&q={searchTerms}&hl=en",
++      "image_url": "{google:baseURL}searchbyimage/upload?hl=en",
++      "new_tab_url": "{google:baseURL}_/chrome/newtab?hl=en&ie={inputEncoding}",
++      "contextual_search_url": "{google:baseURL}_/contextualsearch?{google:contextualSearchVersion}{google:contextualSearchContextData}&hl=en",
++      "image_url_post_params": "encoded_image={google:imageThumbnail},image_url={google:imageURL},sbisrc={google:imageSearchSource},original_width={google:imageOriginalWidth},original_height={google:imageOriginalHeight}",
++      "alternate_urls": [
++        "{google:baseURL}?hl=en#q={searchTerms}",
++        "{google:baseURL}search?hl=en#q={searchTerms}",
++        "{google:baseURL}webhp?hl=en#q={searchTerms}",
++        "{google:baseURL}s?hl=en#q={searchTerms}",
++        "{google:baseURL}s?hl=en&q={searchTerms}"
++      ],
++      "type": "SEARCH_ENGINE_GOOGLE_EN",
++      "id": 13
++    },
++
+     "mail_ru": {
+       "name": "@MAIL.RU",
+       "keyword": "mail.ru",
+diff --git a/components/search_engines/search_engine_countries-inc.cc b/components/search_engines/search_engine_countries-inc.cc
+--- a/components/search_engines/search_engine_countries-inc.cc
++++ b/components/search_engines/search_engine_countries-inc.cc
+@@ -33,6 +33,7 @@ struct EngineAndTier {
+
+ // Default (for countries with no better engine set)
+ constexpr EngineAndTier engines_default[] = {
++    {SearchEngineTier::kTopEngines, &googleen},
+     {SearchEngineTier::kTopEngines, &google},
+     {SearchEngineTier::kTopEngines, &bing},
+     {SearchEngineTier::kTopEngines, &yahoo},
+@@ -1449,5 +1450,7 @@ const std::vector<EngineAndTier> GetPrepopulationSetFromCountryID(
+   for (size_t i = 0; i < num_engines; i++) {
+     t_url.push_back(engines[i]);
+   }
++  t_url.push_back({SearchEngineTier::kTopEngines, &googleen});
++  t_url.push_back({SearchEngineTier::kTopEngines, &duckduckgo_light});
+   return t_url;
+ }
+diff --git a/components/search_engines/search_engine_type.h b/components/search_engines/search_engine_type.h
+--- a/components/search_engines/search_engine_type.h
++++ b/components/search_engines/search_engine_type.h
+@@ -91,10 +91,15 @@ enum SearchEngineType {
+   SEARCH_ENGINE_YOU = 72,
+   SEARCH_ENGINE_STARTER_PACK_ASK_GOOGLE = 73,
+   SEARCH_ENGINE_LILO = 74,
++  SEARCH_ENGINE_GOOGLE_EN = 75,
++  SEARCH_ENGINE_DUCKDUCKGOLIGHT = 76,
+
+   SEARCH_ENGINE_MAX  // Bounding value needed for UMA histogram macro.
+ };
+
++static_assert(SEARCH_ENGINE_DUCKDUCKGOLIGHT == (SEARCH_ENGINE_MAX - 1),
++              "Please check this patch");
++
+ // Enum to record the type of search engine a user used in keyword mode. This
+ // should be kept aligned with the `OmniboxBuiltinEngineType` enum in enums.xml.
+ // Entries should not be renumbered and numeric values should never be reused.

@@ -1,0 +1,18 @@
+--- a/chrome/browser/language/android/java/src/org/chromium/chrome/browser/language/settings/AppLanguagePreferenceDelegate.java
++++ b/chrome/browser/language/android/java/src/org/chromium/chrome/browser/language/settings/AppLanguagePreferenceDelegate.java
+@@ -94,15 +94,6 @@
+         // Disable preference so a second downloaded cannot be started while one is in progress.
+         mPreference.setEnabled(false);
+
+-        AppLocaleUtils.setAppLanguagePref(
+-                code,
+-                (success) -> {
+-                    if (success) {
+-                        languageSplitDownloadComplete();
+-                    } else {
+-                        languageSplitDownloadFailed();
+-                    }
+-                });
+     }
+
+     /** Callback to update the UI when a language split has successfully been installed. */
