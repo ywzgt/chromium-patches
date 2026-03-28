@@ -8,20 +8,32 @@ Until the real tab is opened, no data is retrieved.
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- .../android/java/res/xml/homepage_preferences.xml   |  6 ++++++
- .../chrome/browser/BrowserRestartActivity.java      |  1 +
- .../chrome/browser/ChromeInactivityTracker.java     | 13 +++++++++++++
- .../chrome/browser/ChromeTabbedActivity.java        |  4 +++-
- .../chrome/browser/tasks/ReturnToChromeUtil.java    | 12 +++++++++++-
- .../browser/preferences/ChromePreferenceKeys.java   |  2 ++
- .../preferences/LegacyChromePreferenceKeys.java     |  1 +
- .../java/res/layout/single_tab_view_layout.xml      | 11 +++++++++--
- .../single_tab/SingleTabSwitcherOnNtpMediator.java  | 10 ++++------
- .../show-ntp-at-startup.grdp                        |  9 +++++++++
- .../chrome_feature_list_cc/show-ntp-at-startup.inc  |  2 ++
- 11 files changed, 61 insertions(+), 10 deletions(-)
+ .../java/res/xml/homepage_preferences.xml     |  6 ++++
+ .../browser/BrowserRestartActivity.java       |  1 +
+ .../browser/ChromeInactivityTracker.java      | 14 ++++++++
+ .../chrome/browser/ChromeTabbedActivity.java  |  2 ++
+ .../browser/tasks/ReturnToChromeUtil.java     | 16 ++++++++-
+ chrome/app/settings_strings.grdp              |  2 +-
+ .../flags/android/chrome_feature_list.cc      |  1 +
+ .../cromite/sShowNtpAtStartupAndroid.java     | 33 +++++++++++++++++++
+ .../preferences/ChromePreferenceKeys.java     |  2 ++
+ .../LegacyChromePreferenceKeys.java           |  1 +
+ .../on_startup_page/on_startup_page.ts        |  4 +--
+ chrome/browser/sessions/tab_loader.cc         |  2 +-
+ .../res/layout/single_tab_module_layout.xml   | 12 +++----
+ .../SingleTabSwitcherCoordinator.java         |  2 +-
+ .../SingleTabSwitcherOnNtpMediator.java       |  5 +--
+ .../show-ntp-at-startup.grdp                  |  9 +++++
+ .../startup/startup_browser_creator_impl.cc   |  8 +++++
+ .../about_flags_cc/show-ntp-at-startup.inc    | 12 +++++++
+ .../show-ntp-at-startup.inc                   |  5 +++
+ .../show-ntp-at-startup.inc                   |  1 +
+ 20 files changed, 124 insertions(+), 14 deletions(-)
+ create mode 100644 chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sShowNtpAtStartupAndroid.java
  create mode 100644 chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
+ create mode 100644 cromite_flags/chrome/browser/about_flags_cc/show-ntp-at-startup.inc
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
+ create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_h/show-ntp-at-startup.inc
 
 diff --git a/chrome/android/java/res/xml/homepage_preferences.xml b/chrome/android/java/res/xml/homepage_preferences.xml
 --- a/chrome/android/java/res/xml/homepage_preferences.xml
@@ -53,15 +65,18 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/BrowserRestartA
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
-@@ -12,6 +12,7 @@ import org.chromium.chrome.browser.lifecycle.ActivityLifecycleDispatcher;
+@@ -12,8 +12,10 @@ import org.chromium.chrome.browser.lifecycle.ActivityLifecycleDispatcher;
  import org.chromium.chrome.browser.lifecycle.DestroyObserver;
  import org.chromium.chrome.browser.lifecycle.PauseResumeWithNativeObserver;
  import org.chromium.chrome.browser.lifecycle.StartStopWithNativeObserver;
 +import org.chromium.chrome.browser.flags.ChromeFeatureList;
  import org.chromium.chrome.browser.preferences.ChromePreferenceKeys;
  import org.chromium.chrome.browser.preferences.ChromeSharedPreferences;
++import org.chromium.chrome.browser.flags.cromite.sShowNtpAtStartupAndroid;
  
-@@ -55,6 +56,18 @@ public class ChromeInactivityTracker
+ /**
+  * Manages pref that can track the delay since the last stop of the tracked activity.
+@@ -55,6 +57,18 @@ public class ChromeInactivityTracker
          mLifecycleDispatcher.register(this);
      }
  
@@ -72,8 +87,8 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivit
 +
 +    public boolean isNewStartup() {
 +        return
-+            ChromeFeatureList.sShowNtpAtStartupAndroid.isEnabled()
-+            && ChromeSharedPreferences.getInstance().readBoolean(
++            sShowNtpAtStartupAndroid.getInstance().isEnabled() &&
++            ChromeSharedPreferences.getInstance().readBoolean(
 +                ChromePreferenceKeys.TABBED_ACTIVITY_IS_STARTUP, false);
 +    }
 +
@@ -83,39 +98,37 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivit
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -1672,7 +1672,7 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
-                 Callback<String> onStandardActiveIndexRead = null;
-                 shouldShowNtpAsHomeSurfaceAtStartup = shouldShowNtpHomeSurfaceOnStartup();
-                 boolean skipSavingNonActiveNtps = skipSavingNonActiveNtps();
--                if (skipSavingNonActiveNtps) {
-+                if (skipSavingNonActiveNtps || shouldShowNtpAsHomeSurfaceAtStartup) {
-                     mHomeSurfaceTracker = new HomeSurfaceTracker();
-                 }
-                 if (shouldShowNtpAsHomeSurfaceAtStartup) {
-@@ -2389,6 +2389,8 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+@@ -2460,6 +2460,8 @@ public class ChromeTabbedActivity extends ChromeActivity implements MismatchedIn
          mInactivityTracker =
                  new ChromeInactivityTracker(
                          ChromePreferenceKeys.TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF);
 +        mInactivityTracker.setIsStartup(
-+            !CipherFactory.getInstance().restoreFromBundle(getSavedInstanceState()));
++            !CipherLazyHolder.sCipherInstance.restoreFromBundle(getSavedInstanceState()));
          TabUsageTracker.initialize(this.getLifecycleDispatcher(), tabModelSelector);
- 
-         assert getActivityTabStartupMetricsTracker() != null;
+         TabGroupUsageTracker.initialize(
+                 this.getLifecycleDispatcher(), tabModelSelector, this::isWarmOnResume);
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
-@@ -35,6 +35,7 @@ import org.chromium.base.supplier.ObservableSupplierImpl;
- import org.chromium.base.supplier.OneshotSupplier;
- import org.chromium.base.supplier.Supplier;
- import org.chromium.chrome.browser.ActivityTabProvider;
+@@ -18,9 +18,11 @@ import androidx.annotation.Nullable;
+ import org.chromium.base.IntentUtils;
+ import org.chromium.base.metrics.RecordHistogram;
+ import org.chromium.chrome.R;
 +import org.chromium.chrome.browser.BrowserRestartActivity;
  import org.chromium.chrome.browser.ChromeInactivityTracker;
- import org.chromium.chrome.browser.IntentHandler;
  import org.chromium.chrome.browser.app.ChromeActivity;
-@@ -631,6 +632,15 @@ public final class ReturnToChromeUtil {
-             }
+ import org.chromium.chrome.browser.flags.ChromeFeatureList;
++import org.chromium.chrome.browser.flags.cromite.sShowNtpAtStartupAndroid;
+ import org.chromium.chrome.browser.magic_stack.HomeModulesMetricsUtils;
+ import org.chromium.chrome.browser.ntp.NewTabPage;
+ import org.chromium.chrome.browser.tab.Tab;
+@@ -124,6 +126,18 @@ public final class ReturnToChromeUtil {
+             return false;
          }
  
++        if (!sShowNtpAtStartupAndroid.getInstance().isEnabled())
++            return false;
++
 +        boolean isMainIntentFromLauncherOrRestart =
 +                IntentUtils.isMainIntentFromLauncher(intent)
 +                || IntentUtils.safeGetBooleanExtra(
@@ -125,10 +138,10 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToC
 +            return true;
 +        }
 +
-         // Checks whether to show the Start surface due to feature flag TAB_SWITCHER_ON_RETURN_MS.
+         // Checks whether to show the NTP homepage due to feature flag
+         // HOME_SURFACE_RETURN_TIME_SECONDS.
          long lastVisibleTimeMs = inactivityTracker.getLastVisibleTimeMs();
-         long lastBackgroundTimeMs = inactivityTracker.getLastBackgroundedTimeMs();
-@@ -778,7 +788,7 @@ public final class ReturnToChromeUtil {
+@@ -234,7 +248,7 @@ public final class ReturnToChromeUtil {
              TabModel currentTabModel,
              TabCreator tabCreator,
              HomeSurfaceTracker homeSurfaceTracker) {
@@ -137,10 +150,71 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToC
              return false;
          }
  
+diff --git a/chrome/app/settings_strings.grdp b/chrome/app/settings_strings.grdp
+--- a/chrome/app/settings_strings.grdp
++++ b/chrome/app/settings_strings.grdp
+@@ -1079,7 +1079,7 @@
+     Open a specific page or set of pages
+   </message>
+   <message name="IDS_SETTINGS_ON_STARTUP_CONTINUE_AND_OPEN_SPECIFIC" desc="Radio button option to continue where you left off and open a specific set of pages.">
+-    Continue where you left off and open a specific set of pages
++    Continue where you left off and open a New Tab page
+   </message>
+   <message name="IDS_SETTINGS_ON_STARTUP_USE_CURRENT" desc="Button to use current pages.">
+     Use current pages
+diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
+--- a/chrome/browser/flags/android/chrome_feature_list.cc
++++ b/chrome/browser/flags/android/chrome_feature_list.cc
+@@ -335,6 +335,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+     &kSearchInCCT,
+     &kSearchInCCTAlternateTapHandling,
+     &kSearchResumptionModuleAndroid,
++    &kShowNtpAtStartupAndroid,
+     &kSettingsSingleActivity,
+     &kShareCustomActionsInCCT,
+     &kSkipIsolatedSplitPreload,
+diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sShowNtpAtStartupAndroid.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sShowNtpAtStartupAndroid.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sShowNtpAtStartupAndroid.java
+@@ -0,0 +1,33 @@
++/*
++    This file is part of Cromite.
++
++    Cromite is free software: you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation, either version 3 of the License, or
++    (at your option) any later version.
++
++    Cromite is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with Cromite. If not, see <https://www.gnu.org/licenses/>.
++*/
++
++package org.chromium.chrome.browser.flags.cromite;
++
++import org.chromium.components.cached_flags.CachedFlag;
++import org.chromium.chrome.browser.flags.ChromeFeatureMap;
++
++public class sShowNtpAtStartupAndroid {
++    private static final CachedFlag sInstance =
++        new CachedFlag(ChromeFeatureMap.getInstance(),
++            "ShowNtpAtStartupAndroid", false);
++
++    private sShowNtpAtStartupAndroid() {}
++
++    public static CachedFlag getInstance() {
++        return sInstance;
++    }
++}
 diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 --- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 +++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
-@@ -791,6 +791,8 @@ public final class ChromePreferenceKeys {
+@@ -813,6 +813,8 @@ public final class ChromePreferenceKeys {
  
      public static final String TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF =
              "ChromeTabbedActivity.BackgroundTimeMs";
@@ -152,7 +226,7 @@ diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/bro
 diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
 --- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
 +++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
-@@ -118,6 +118,7 @@ public class LegacyChromePreferenceKeys {
+@@ -116,6 +116,7 @@ public class LegacyChromePreferenceKeys {
                  ChromePreferenceKeys.SNAPSHOT_DATABASE_REMOVED,
                  ChromePreferenceKeys.SYNC_ERROR_MESSAGE_SHOWN_AT_TIME,
                  ChromePreferenceKeys.TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF,
@@ -160,65 +234,118 @@ diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/bro
                  ChromePreferenceKeys.TABMODEL_ACTIVE_TAB_ID,
                  ChromePreferenceKeys.TABMODEL_HAS_COMPUTED_MAX_ID,
                  ChromePreferenceKeys.TABMODEL_HAS_RUN_FILE_MIGRATION,
-diff --git a/chrome/browser/single_tab/android/java/res/layout/single_tab_view_layout.xml b/chrome/browser/single_tab/android/java/res/layout/single_tab_view_layout.xml
---- a/chrome/browser/single_tab/android/java/res/layout/single_tab_view_layout.xml
-+++ b/chrome/browser/single_tab/android/java/res/layout/single_tab_view_layout.xml
-@@ -34,7 +34,7 @@ found in the LICENSE file.
-       <LinearLayout
-           android:id="@+id/continue_browsing"
-           android:layout_width="wrap_content"
--          android:layout_height="match_parent"
-+          android:layout_height="wrap_content"
-           android:layout_toEndOf="@+id/tab_favicon_view"
-           android:layout_toStartOf="@+id/chevron_right_view"
-           android:orientation="vertical">
-@@ -55,11 +55,18 @@ found in the LICENSE file.
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_weight="1.0"
--            android:layout_marginBottom="10dp"
-             android:layout_gravity="center_vertical"
-             android:gravity="center_vertical"
-             android:singleLine="true"
-             android:textAppearance="@style/TextAppearance.TextMedium" />
-+        <TextView
-+            android:id="@+id/tab_url_view"
-+            android:layout_width="wrap_content"
-+            android:layout_height="wrap_content"
-+            android:layout_marginBottom="10dp"
-+            android:gravity="start"
-+            android:singleLine="false"
-+            android:textAppearance="@style/TextAppearance.TextSmall.Secondary"/>
+diff --git a/chrome/browser/resources/settings/on_startup_page/on_startup_page.ts b/chrome/browser/resources/settings/on_startup_page/on_startup_page.ts
+--- a/chrome/browser/resources/settings/on_startup_page/on_startup_page.ts
++++ b/chrome/browser/resources/settings/on_startup_page/on_startup_page.ts
+@@ -81,8 +81,7 @@ export class SettingsOnStartupPageElement extends
+    *     pages" is selected.
+    */
+   private showStartupUrls_(restoreOnStartup: PrefValues): boolean {
+-    return restoreOnStartup === PrefValues.OPEN_SPECIFIC ||
+-        restoreOnStartup === PrefValues.CONTINUE_AND_OPEN_SPECIFIC;
++    return restoreOnStartup === PrefValues.OPEN_SPECIFIC;
+   }
+ 
+   /**
+@@ -93,6 +92,7 @@ export class SettingsOnStartupPageElement extends
+    */
+   private showContinueAndOpenSpecific_(pref: chrome.settingsPrivate.PrefObject):
+       boolean {
++    if ((true)) return true;
+     return pref.enforcement === chrome.settingsPrivate.Enforcement.ENFORCED ||
+         pref.enforcement === chrome.settingsPrivate.Enforcement.RECOMMENDED;
+   }
+diff --git a/chrome/browser/sessions/tab_loader.cc b/chrome/browser/sessions/tab_loader.cc
+--- a/chrome/browser/sessions/tab_loader.cc
++++ b/chrome/browser/sessions/tab_loader.cc
+@@ -52,7 +52,7 @@ struct ScoredTabComparator {
+ };
+ 
+ // Testing seams.
+-size_t g_max_loaded_tab_count_for_testing = 0;
++size_t g_max_loaded_tab_count_for_testing = 1;
+ base::RepeatingCallback<void(TabLoader*)>* g_construction_callback = nullptr;
+ 
+ // Determines if the given browser (can be null) is closing.
+diff --git a/chrome/browser/single_tab/android/java/res/layout/single_tab_module_layout.xml b/chrome/browser/single_tab/android/java/res/layout/single_tab_module_layout.xml
+--- a/chrome/browser/single_tab/android/java/res/layout/single_tab_module_layout.xml
++++ b/chrome/browser/single_tab/android/java/res/layout/single_tab_module_layout.xml
+@@ -71,7 +71,7 @@ found in the LICENSE file.
+           <RelativeLayout
+               android:id="@+id/tab_images"
+               android:layout_width="wrap_content"
+-              android:layout_height="match_parent"
++              android:layout_height="wrap_content"
+               android:background="@drawable/single_tab_thumbnail_background"
+               tools:ignore="UselessParent">
+ 
+@@ -122,21 +122,21 @@ found in the LICENSE file.
+           <TextView
+               android:id="@+id/tab_title_view"
+               android:layout_width="match_parent"
+-              android:layout_height="0dp"
+-              android:layout_weight="1"
++              android:layout_height="wrap_content"
+               android:ellipsize="end"
+               android:gravity="start|top"
+-              android:maxLines="3"
++              android:singleLine="true"
+               android:textAppearance="@style/TextAppearance.Headline2Thick.Secondary"
+                 tools:ignore="NestedWeights"/>
+ 
+           <TextView
+               android:id="@+id/tab_url_view"
++              android:layout_weight="1"
+               android:layout_width="match_parent"
+-              android:layout_height="wrap_content"
++              android:layout_height="match_parent"
+               android:layout_marginBottom="2dp"
+               android:gravity="start"
+-              android:singleLine="true"
++              android:singleLine="false"
+               android:textAppearance="@style/TextAppearance.TextSmall.Secondary" />
        </LinearLayout>
  
-       <ImageView
+diff --git a/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherCoordinator.java b/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherCoordinator.java
+--- a/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherCoordinator.java
++++ b/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherCoordinator.java
+@@ -176,7 +176,7 @@ public class SingleTabSwitcherCoordinator implements ModuleProvider {
+ 
+     /** Returns the layout resource id for the single tab card. */
+     public static int getModuleLayoutId() {
+-        return R.layout.single_tab_module_layout;
++        return R.layout.single_tab_module_layout; // (uazo) check this
+     }
+ 
+     public void destroy() {
 diff --git a/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherOnNtpMediator.java b/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherOnNtpMediator.java
 --- a/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherOnNtpMediator.java
 +++ b/chrome/browser/single_tab/android/java/src/org/chromium/chrome/browser/single_tab/SingleTabSwitcherOnNtpMediator.java
-@@ -292,9 +292,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+@@ -108,6 +108,7 @@ public class SingleTabSwitcherOnNtpMediator {
+                         mSingleTabCardClickedCallback = null;
+                     }
+                 });
++        if (mSeeMoreLinkClickedCallback != null)
+         mPropertyModel.set(
+                 SEE_MORE_LINK_CLICK_LISTENER,
+                 () -> {
+@@ -265,14 +266,14 @@ public class SingleTabSwitcherOnNtpMediator {
                          public void onPageLoadFinished(Tab tab, GURL url) {
                              super.onPageLoadFinished(tab, url);
                              mPropertyModel.set(TITLE, tab.getTitle());
--                            if (mIsSurfacePolishEnabled) {
--                                mPropertyModel.set(
--                                        URL, SingleTabSwitcherMediator.getDomainUrl(tab.getUrl()));
-+                            if ((true)) {
-+                                mPropertyModel.set(URL, tab.getUrl().getPossiblyInvalidSpec());
-                             }
+-                            mPropertyModel.set(URL, getDomainUrl(tab.getUrl()));
++                            mPropertyModel.set(URL, tab.getUrl().getPossiblyInvalidSpec());
                              tab.removeObserver(this);
                          }
-@@ -302,9 +301,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+                     };
              mMostRecentTab.addObserver(tabObserver);
          } else {
              mPropertyModel.set(TITLE, mMostRecentTab.getTitle());
--            if (mIsSurfacePolishEnabled) {
--                mPropertyModel.set(
--                        URL, SingleTabSwitcherMediator.getDomainUrl(mMostRecentTab.getUrl()));
-+            if ((true)) {
-+                mPropertyModel.set(URL, mMostRecentTab.getUrl().getPossiblyInvalidSpec());
-             }
+-            mPropertyModel.set(URL, getDomainUrl(mMostRecentTab.getUrl()));
++            mPropertyModel.set(URL, mMostRecentTab.getUrl().getPossiblyInvalidSpec());
          }
      }
+ 
 diff --git a/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp b/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
 new file mode 100644
 --- /dev/null
@@ -233,11 +360,55 @@ new file mode 100644
 +        Enable showing a NewTabPage at startup and allows selection of the last open tab
 +    </message>
 +</grit-part>
+diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+--- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
++++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+@@ -536,6 +536,14 @@ StartupBrowserCreatorImpl::DetermineStartupTabs(
+       AppendTabs(provider.GetNewTabPageTabs(*command_line_, profile_), &tabs);
+     }
+ 
++    SessionStartupPref session_startup_pref =
++          SessionStartupPref::GetStartupPref(profile_);
++    if (session_startup_pref.type == SessionStartupPref::LAST_AND_URLS) {
++      StartupTabs new_tabs;
++      new_tabs.emplace_back(GURL(chrome::kChromeUINewTabURL));
++      AppendTabs(new_tabs, &tabs);
++    }
++
+     // Potentially add a tab appropriate to display the Privacy Sandbox
+     // confirmaton dialog on top of. Ideally such a tab will already exist
+     // in |tabs|, and no additional tab will be required.
+diff --git a/cromite_flags/chrome/browser/about_flags_cc/show-ntp-at-startup.inc b/cromite_flags/chrome/browser/about_flags_cc/show-ntp-at-startup.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/chrome/browser/about_flags_cc/show-ntp-at-startup.inc
+@@ -0,0 +1,12 @@
++#if BUILDFLAG(IS_ANDROID)
++
++#ifdef FLAG_SECTION
++
++    {"enable-show-ntp-at-startup",
++     "Show a NewTabPage at startup",
++     "Enable showing a NewTabPage at startup after leaving Cromite for a while.", kOsAndroid,
++     FEATURE_VALUE_TYPE(chrome::android::kShowNtpAtStartupAndroid)},
++
++#endif
++
++#endif
 diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
 new file mode 100644
 --- /dev/null
 +++ b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
-@@ -0,0 +1,2 @@
+@@ -0,0 +1,5 @@
 +SET_CROMITE_FEATURE_ENABLED(kStartSurfaceReturnTime);
-+SET_CROMITE_FEATURE_ENABLED(kShowNtpAtStartupAndroid);
++
++CROMITE_FEATURE(kShowNtpAtStartupAndroid,
++                "ShowNtpAtStartupAndroid",
++                base::FEATURE_ENABLED_BY_DEFAULT);
+diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_h/show-ntp-at-startup.inc b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_h/show-ntp-at-startup.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_h/show-ntp-at-startup.inc
+@@ -0,0 +1 @@
++BASE_DECLARE_FEATURE(kShowNtpAtStartupAndroid);
 --

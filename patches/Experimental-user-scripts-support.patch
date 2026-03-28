@@ -40,7 +40,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  chrome/browser/profiles/profile_manager.cc    |  11 +
  chrome/browser/profiles/renderer_updater.cc   |  19 +-
  chrome/browser/profiles/renderer_updater.h    |   3 +
- .../webui/chrome_web_ui_controller_factory.cc |   5 +
+ .../browser/ui/webui/chrome_web_ui_configs.cc |   6 +
  chrome/chrome_paks.gni                        |   2 +
  chrome/common/renderer_configuration.mojom    |   1 +
  chrome/renderer/BUILD.gn                      |   6 +
@@ -48,14 +48,14 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../renderer/chrome_render_thread_observer.cc |   5 +
  components/components_strings.grd             |   1 +
  components/user_scripts/README.md             | 150 ++++
- components/user_scripts/android/BUILD.gn      |  84 ++
+ components/user_scripts/android/BUILD.gn      |  86 ++
  .../java/res/layout/accept_script_item.xml    | 160 ++++
  .../java/res/layout/accept_script_list.xml    |  10 +
  .../java/res/layout/scripts_preference.xml    |  40 +
  .../android/java/res/values/dimens.xml        |  11 +
  .../java/res/xml/userscripts_preferences.xml  |  34 +
- .../user_scripts/UserScriptsUtils.java        |  87 ++
- .../user_scripts/FragmentWindowAndroid.java   |  90 ++
+ .../user_scripts/UserScriptsUtils.java        |  88 ++
+ .../user_scripts/FragmentWindowAndroid.java   |  93 ++
  .../user_scripts/IUserScriptsUtils.java       |  22 +
  .../components/user_scripts/ScriptInfo.java   |  37 +
  .../user_scripts/ScriptListBaseAdapter.java   | 163 ++++
@@ -73,8 +73,8 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../user-script-ui/user-scripts-ui.html       |  14 +
  .../user-script-ui/user-scripts-ui.js         |   9 +
  .../browser/ui/user_scripts_ui.cc             | 146 ++++
- .../user_scripts/browser/ui/user_scripts_ui.h |  37 +
- .../browser/user_script_loader.cc             | 716 ++++++++++++++++
+ .../user_scripts/browser/ui/user_scripts_ui.h |  46 +
+ .../browser/user_script_loader.cc             | 702 +++++++++++++++
  .../user_scripts/browser/user_script_loader.h | 168 ++++
  .../browser/user_script_pref_info.cc          |  34 +
  .../browser/user_script_pref_info.h           |  72 ++
@@ -85,7 +85,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  components/user_scripts/common/BUILD.gn       |  48 ++
  components/user_scripts/common/constants.h    |  15 +
  components/user_scripts/common/error_utils.cc |  54 ++
- components/user_scripts/common/error_utils.h  |  24 +
+ components/user_scripts/common/error_utils.h  |  22 +
  .../common/extension_message_generator.cc     |  29 +
  .../common/extension_message_generator.h      |  11 +
  .../user_scripts/common/extension_messages.cc |  40 +
@@ -93,49 +93,49 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  components/user_scripts/common/host_id.cc     |  31 +
  components/user_scripts/common/host_id.h      |  35 +
  .../user_scripts/common/script_constants.h    |  33 +
- components/user_scripts/common/url_pattern.cc | 803 ++++++++++++++++++
- components/user_scripts/common/url_pattern.h  | 303 +++++++
- .../user_scripts/common/url_pattern_set.cc    | 335 ++++++++
- .../user_scripts/common/url_pattern_set.h     | 160 ++++
+ components/user_scripts/common/url_pattern.cc | 813 ++++++++++++++++++
+ components/user_scripts/common/url_pattern.h  | 306 +++++++
+ .../user_scripts/common/url_pattern_set.cc    | 229 +++++
+ .../user_scripts/common/url_pattern_set.h     | 103 +++
  components/user_scripts/common/user_script.cc | 329 +++++++
- components/user_scripts/common/user_script.h  | 403 +++++++++
+ components/user_scripts/common/user_script.h  | 402 +++++++++
  .../common/user_scripts_features.cc           |  32 +
  .../common/user_scripts_features.h            |  36 +
- components/user_scripts/common/view_type.cc   |  39 +
+ components/user_scripts/common/view_type.cc   |  37 +
  components/user_scripts/common/view_type.h    |  48 ++
  components/user_scripts/renderer/BUILD.gn     |  65 ++
- .../renderer/extension_frame_helper.cc        |  95 +++
+ .../renderer/extension_frame_helper.cc        |  95 ++
  .../renderer/extension_frame_helper.h         |  90 ++
- .../user_scripts/renderer/injection_host.cc   |  12 +
+ .../user_scripts/renderer/injection_host.cc   |  16 +
  .../user_scripts/renderer/injection_host.h    |  41 +
  .../renderer/resources/greasemonkey_api.js    |  82 ++
  .../user_scripts_renderer_resources.grd       |  14 +
- .../user_scripts/renderer/script_context.cc   | 191 +++++
+ .../user_scripts/renderer/script_context.cc   | 191 ++++
  .../user_scripts/renderer/script_context.h    |  67 ++
  .../user_scripts/renderer/script_injection.cc | 295 +++++++
  .../user_scripts/renderer/script_injection.h  | 155 ++++
- .../renderer/script_injection_manager.cc      | 415 +++++++++
+ .../renderer/script_injection_manager.cc      | 414 +++++++++
  .../renderer/script_injection_manager.h       | 100 +++
- .../user_scripts/renderer/script_injector.h   |  96 +++
+ .../user_scripts/renderer/script_injector.h   | 100 +++
  .../user_scripts/renderer/scripts_run_info.cc |  31 +
  .../user_scripts/renderer/scripts_run_info.h  |  69 ++
  .../renderer/user_script_injector.cc          | 227 +++++
  .../renderer/user_script_injector.h           |  86 ++
  .../user_scripts/renderer/user_script_set.cc  | 264 ++++++
  .../user_scripts/renderer/user_script_set.h   | 101 +++
- .../renderer/user_script_set_manager.cc       |  77 ++
+ .../renderer/user_script_set_manager.cc       |  76 ++
  .../renderer/user_script_set_manager.h        |  63 ++
  .../renderer/user_scripts_dispatcher.cc       |  36 +
  .../renderer/user_scripts_dispatcher.h        |  49 ++
  .../renderer/user_scripts_renderer_client.cc  | 108 +++
  .../renderer/user_scripts_renderer_client.h   |  38 +
  .../renderer/web_ui_injection_host.cc         |  40 +
- .../renderer/web_ui_injection_host.h          |  27 +
+ .../renderer/web_ui_injection_host.h          |  31 +
  .../strings/userscripts_strings.grdp          |  54 ++
  .../Experimental-user-scripts-support.inc     |  13 +
  ipc/ipc_message_start.h                       |   1 +
  tools/gritsettings/resource_ids.spec          |   6 +
- 108 files changed, 9494 insertions(+), 2 deletions(-)
+ 108 files changed, 9351 insertions(+), 2 deletions(-)
  create mode 100644 components/user_scripts/README.md
  create mode 100755 components/user_scripts/android/BUILD.gn
  create mode 100644 components/user_scripts/android/java/res/layout/accept_script_item.xml
@@ -226,7 +226,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -198,7 +198,11 @@ if (current_toolchain == default_toolchain) {
+@@ -193,7 +193,11 @@ if (current_toolchain == default_toolchain) {
      sources = chrome_java_resources
      sources += [ "//chrome/android/java/res_app/layout/main.xml" ]
  
@@ -239,7 +239,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
        ":chrome_base_module_resources",
        ":ui_locale_string_resources",
        "//chrome/android/webapk/libs/common:splash_resources",
-@@ -645,6 +649,7 @@ if (current_toolchain == default_toolchain) {
+@@ -677,6 +681,7 @@ if (current_toolchain == default_toolchain) {
        "//components/ukm/android:java",
        "//components/url_formatter/android:url_formatter_java",
        "//components/user_prefs/android:java",
@@ -250,7 +250,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
 --- a/chrome/android/java/res/xml/main_preferences.xml
 +++ b/chrome/android/java/res/xml/main_preferences.xml
-@@ -137,6 +137,11 @@ found in the LICENSE file.
+@@ -154,6 +154,11 @@ for the previous order (main_preferences_legacy). -->
          android:key="useragent_settings"
          android:order="20"
          android:title="@string/prefs_useragent_settings"/>
@@ -265,7 +265,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/download/DownloadUtils.java b/chrome/android/java/src/org/chromium/chrome/browser/download/DownloadUtils.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/download/DownloadUtils.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/download/DownloadUtils.java
-@@ -75,6 +75,7 @@ import org.chromium.ui.base.DeviceFormFactor;
+@@ -76,6 +76,7 @@ import org.chromium.ui.base.DeviceFormFactor;
  import org.chromium.ui.base.MimeTypeUtils;
  import org.chromium.ui.widget.Toast;
  import org.chromium.url.GURL;
@@ -273,7 +273,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/download/Downlo
  
  import java.io.File;
  
-@@ -409,6 +410,11 @@ public class DownloadUtils {
+@@ -429,6 +430,11 @@ public class DownloadUtils {
              String referrer,
              @DownloadOpenSource int source,
              Context context) {
@@ -288,16 +288,16 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/download/Downlo
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessInitializationHandler.java b/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessInitializationHandler.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessInitializationHandler.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessInitializationHandler.java
-@@ -123,6 +123,8 @@ import java.util.ArrayList;
- import java.util.Date;
+@@ -144,6 +144,8 @@ import java.util.Date;
  import java.util.List;
+ import java.util.Locale;
  
 +import org.chromium.chrome.browser.user_scripts.UserScriptsUtils;
 +
  /**
-  * Handles the initialization dependences of the browser process.  This is meant to handle the
+  * Handles the initialization dependences of the browser process. This is meant to handle the
   * initialization that is not tied to any particular Activity, and the logic that should only be
-@@ -414,6 +416,8 @@ public class ProcessInitializationHandler {
+@@ -620,6 +622,8 @@ public class ProcessInitializationHandler {
  
                      DefaultBrowserInfo.initBrowserFetcher();
  
@@ -309,15 +309,15 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessIni
 diff --git a/chrome/android/java_sources.gni b/chrome/android/java_sources.gni
 --- a/chrome/android/java_sources.gni
 +++ b/chrome/android/java_sources.gni
-@@ -24,6 +24,7 @@ import("//chrome/common/features.gni")
- import("//components/feed/features.gni")
+@@ -7,6 +7,7 @@ import("//chrome/android/chrome_java_sources.gni")
+ import("//chrome/common/features.gni")
  import("//components/offline_pages/buildflags/features.gni")
  import("//device/vr/buildflags/buildflags.gni")
 +import("//components/user_scripts/android/java_sources.gni")
  
  # Only used for testing, should not be shipped to end users.
  if (enable_offline_pages_harness) {
-@@ -62,3 +63,5 @@ if (enable_cardboard) {
+@@ -26,3 +27,5 @@ if (enable_cardboard) {
      "java/src/org/chromium/chrome/browser/vr/VrCompositorDelegateProviderImpl.java",
    ]
  }
@@ -326,7 +326,7 @@ diff --git a/chrome/android/java_sources.gni b/chrome/android/java_sources.gni
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -3766,6 +3766,13 @@ static_library("browser") {
+@@ -3511,6 +3511,13 @@ static_library("browser") {
        ]
        deps += [ "//chrome/android/modules/dev_ui/provider:native" ]
      }
@@ -343,26 +343,26 @@ diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -175,6 +175,7 @@
+@@ -182,6 +182,7 @@
  #include "components/ui_devtools/switches.h"
  #include "components/variations/variations_switches.h"
  #include "components/version_info/channel.h"
 +#include "components/user_scripts/common/user_scripts_features.h"
  #include "components/version_info/version_info.h"
+ #include "components/visited_url_ranking/public/features.h"
  #include "components/viz/common/features.h"
- #include "components/viz/common/switches.h"
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -269,6 +269,7 @@
+@@ -268,6 +268,7 @@
+ #include "components/ntp_tiles/popular_sites_impl.h"
  #include "components/permissions/contexts/geolocation_permission_context_android.h"
- #include "components/query_tiles/tile_service_prefs.h"
  #include "components/webapps/browser/android/install_prompt_prefs.h"
 +#include "components/user_scripts/browser/user_script_prefs.h"
  #else  // BUILDFLAG(IS_ANDROID)
- #include "chrome/browser/cart/cart_service.h"
- #include "chrome/browser/companion/core/promo_handler.h"
-@@ -1974,6 +1975,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
+ #include "chrome/browser/device_api/device_service_impl.h"
+ #include "chrome/browser/gcm/gcm_product_util.h"
+@@ -1958,6 +1959,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
    translate::TranslatePrefs::RegisterProfilePrefs(registry);
    omnibox::RegisterProfilePrefs(registry);
    ZeroSuggestProvider::RegisterProfilePrefs(registry);
@@ -370,12 +370,12 @@ diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browse
 +  user_scripts::UserScriptsPrefs::RegisterProfilePrefs(registry);
 +#endif
  
- #if !BUILDFLAG(IS_ANDROID) && BUILDFLAG(GOOGLE_CHROME_BRANDING)
-   promos_utils::RegisterProfilePrefs(registry);
+ #if BUILDFLAG(ENABLE_SESSION_SERVICE)
+   RegisterSessionServiceLogProfilePrefs(registry);
 diff --git a/chrome/browser/profiles/BUILD.gn b/chrome/browser/profiles/BUILD.gn
 --- a/chrome/browser/profiles/BUILD.gn
 +++ b/chrome/browser/profiles/BUILD.gn
-@@ -77,6 +77,9 @@ source_set("profile") {
+@@ -80,6 +80,9 @@ source_set("profile") {
      "//content/public/browser",
      "//extensions/buildflags",
    ]
@@ -388,20 +388,20 @@ diff --git a/chrome/browser/profiles/BUILD.gn b/chrome/browser/profiles/BUILD.gn
 diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 --- a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 +++ b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
-@@ -520,6 +520,10 @@
- #include "chrome/browser/enterprise/data_controls/reporting_service.h"
+@@ -560,6 +560,10 @@
+ #include "chrome/browser/net/nss_service_factory.h"
  #endif
  
 +#if BUILDFLAG(IS_ANDROID)
 +#include "components/user_scripts/browser/userscripts_browser_client.h"
 +#endif
 +
- namespace chrome {
- 
  void AddProfilesExtraParts(ChromeBrowserMainParts* main_parts) {
-@@ -1280,6 +1284,9 @@ void ChromeBrowserMainExtraPartsProfiles::
- #if !BUILDFLAG(IS_ANDROID)
-   WebUIContentsPreloadManager::EnsureFactoryBuilt();
+   main_parts->AddParts(std::make_unique<ChromeBrowserMainExtraPartsProfiles>());
+ }
+@@ -1359,6 +1363,9 @@ void ChromeBrowserMainExtraPartsProfiles::
+     tab_groups::CollaborationMessagingObserverFactory::GetInstance();
+   }
  #endif
 +#if BUILDFLAG(IS_ANDROID)
 +  user_scripts::UserScriptsBrowserClient::GetInstance();
@@ -412,7 +412,7 @@ diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 diff --git a/chrome/browser/profiles/profile_manager.cc b/chrome/browser/profiles/profile_manager.cc
 --- a/chrome/browser/profiles/profile_manager.cc
 +++ b/chrome/browser/profiles/profile_manager.cc
-@@ -115,6 +115,10 @@
+@@ -122,6 +122,10 @@
  #include "extensions/common/manifest.h"
  #endif
  
@@ -423,10 +423,10 @@ diff --git a/chrome/browser/profiles/profile_manager.cc b/chrome/browser/profile
  #if BUILDFLAG(ENABLE_SESSION_SERVICE)
  #include "chrome/browser/sessions/app_session_service_factory.h"
  #include "chrome/browser/sessions/session_service_factory.h"
-@@ -1529,6 +1533,13 @@ void ProfileManager::DoFinalInitForServices(Profile* profile,
-   // initializing the supervised flag if necessary).
+@@ -1494,6 +1498,13 @@ void ProfileManager::DoFinalInitForServices(Profile* profile,
    ChildAccountServiceFactory::GetForProfile(profile)->Init();
    SupervisedUserServiceFactory::GetForProfile(profile)->Init();
+   ListFamilyMembersServiceFactory::GetForProfile(profile)->Init();
 +#if BUILDFLAG(IS_ANDROID)
 +  user_scripts::UserScriptsBrowserClient* userscript_client =
 +    user_scripts::UserScriptsBrowserClient::GetInstance();
@@ -440,7 +440,7 @@ diff --git a/chrome/browser/profiles/profile_manager.cc b/chrome/browser/profile
 diff --git a/chrome/browser/profiles/renderer_updater.cc b/chrome/browser/profiles/renderer_updater.cc
 --- a/chrome/browser/profiles/renderer_updater.cc
 +++ b/chrome/browser/profiles/renderer_updater.cc
-@@ -38,6 +38,8 @@
+@@ -39,6 +39,8 @@
  #include "chrome/browser/signin/bound_session_credentials/bound_session_cookie_refresh_service_factory.h"
  #endif  // BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
  
@@ -449,7 +449,7 @@ diff --git a/chrome/browser/profiles/renderer_updater.cc b/chrome/browser/profil
  RendererUpdater::RendererUpdater(Profile* profile)
      : profile_(profile),
        is_off_the_record_(profile_->IsOffTheRecord()),
-@@ -73,6 +75,9 @@ RendererUpdater::RendererUpdater(Profile* profile)
+@@ -74,6 +76,9 @@ RendererUpdater::RendererUpdater(Profile* profile)
    force_youtube_restrict_.Init(policy::policy_prefs::kForceYouTubeRestrict,
                                 pref_service);
    allowed_domains_for_apps_.Init(prefs::kAllowedDomainsForApps, pref_service);
@@ -459,7 +459,7 @@ diff --git a/chrome/browser/profiles/renderer_updater.cc b/chrome/browser/profil
  
    pref_change_registrar_.Init(pref_service);
    pref_change_registrar_.Add(
-@@ -87,6 +92,12 @@ RendererUpdater::RendererUpdater(Profile* profile)
+@@ -88,6 +93,12 @@ RendererUpdater::RendererUpdater(Profile* profile)
        prefs::kAllowedDomainsForApps,
        base::BindRepeating(&RendererUpdater::UpdateAllRenderers,
                            base::Unretained(this)));
@@ -472,7 +472,7 @@ diff --git a/chrome/browser/profiles/renderer_updater.cc b/chrome/browser/profil
  }
  
  RendererUpdater::~RendererUpdater() {
-@@ -230,5 +241,11 @@ chrome::mojom::DynamicParamsPtr RendererUpdater::CreateRendererDynamicParams()
+@@ -231,5 +242,11 @@ chrome::mojom::DynamicParamsPtr RendererUpdater::CreateRendererDynamicParams()
        GetBoundSessionThrottlerParams(),
  #endif
        force_google_safesearch_.GetValue(), force_youtube_restrict_.GetValue(),
@@ -498,43 +498,42 @@ diff --git a/chrome/browser/profiles/renderer_updater.h b/chrome/browser/profile
    IntegerPrefMember force_youtube_restrict_;
    StringPrefMember allowed_domains_for_apps_;
  };
-diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
---- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-+++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -92,6 +92,7 @@
- #include "components/security_interstitials/content/known_interception_disclosure_ui.h"
- #include "components/security_interstitials/content/urls.h"
- #include "components/site_engagement/content/site_engagement_service.h"
-+#include "components/user_scripts/browser/ui/user_scripts_ui.h"
- #include "content/public/browser/web_contents.h"
- #include "content/public/browser/web_ui.h"
- #include "content/public/common/content_client.h"
-@@ -477,6 +478,10 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
-     return &NewWebUI<UserActionsUI>;
-   if (url.host_piece() == chrome::kChromeUIVersionHost)
-     return &NewWebUI<VersionUI>;
+diff --git a/chrome/browser/ui/webui/chrome_web_ui_configs.cc b/chrome/browser/ui/webui/chrome_web_ui_configs.cc
+--- a/chrome/browser/ui/webui/chrome_web_ui_configs.cc
++++ b/chrome/browser/ui/webui/chrome_web_ui_configs.cc
+@@ -56,6 +56,9 @@
+ 
+ #include "chrome/browser/ui/webui/proxy_config_ui.h"
+ 
 +#if BUILDFLAG(IS_ANDROID)
-+  if (url.host_piece() == user_scripts::kChromeUIUserScriptsHost)
-+    return &NewWebUI<user_scripts::UserScriptsUI>;
++#include "components/user_scripts/browser/ui/user_scripts_ui.h"
 +#endif
  
- #if !BUILDFLAG(IS_ANDROID)
- #if !BUILDFLAG(IS_CHROMEOS)
+ #if BUILDFLAG(ENABLE_NACL)
+ #include "chrome/browser/ui/webui/nacl_ui.h"
+@@ -399,4 +402,7 @@ void RegisterChromeWebUIConfigs() {
+   map.AddWebUIConfig(
+       std::make_unique<safe_browsing::ChromeSafeBrowsingUIConfig>());
+ #endif
++#if BUILDFLAG(IS_ANDROID)
++  map.AddWebUIConfig(std::make_unique<user_scripts::UserScriptsUIConfig>());
++#endif
+ }
 diff --git a/chrome/chrome_paks.gni b/chrome/chrome_paks.gni
 --- a/chrome/chrome_paks.gni
 +++ b/chrome/chrome_paks.gni
-@@ -122,6 +122,7 @@ template("chrome_extra_paks") {
-       "$root_gen_dir/net/net_resources.pak",
+@@ -140,6 +140,7 @@ template("chrome_extra_paks") {
        "$root_gen_dir/third_party/blink/public/resources/blink_resources.pak",
        "$root_gen_dir/third_party/blink/public/resources/inspector_overlay_resources.pak",
+       "$root_gen_dir/third_party/blink/public/strings/permission_element_generated_strings.pak",
 +      "$root_gen_dir/chrome/userscripts_browser_resources.pak",
-       "$root_gen_dir/ui/resources/webui_resources.pak",
+       "$root_gen_dir/ui/webui/resources/webui_resources.pak",
      ]
      deps = [
-@@ -139,6 +140,7 @@ template("chrome_extra_paks") {
-       "//third_party/blink/public:devtools_inspector_resources",
+@@ -160,6 +161,7 @@ template("chrome_extra_paks") {
        "//third_party/blink/public:resources",
-       "//ui/resources",
+       "//third_party/blink/public/strings:permission_element_generated_strings",
+       "//ui/webui/resources",
 +      "//components/user_scripts/browser:userscripts_browser_resources_grit",
      ]
      if (defined(invoker.deps)) {
@@ -542,7 +541,7 @@ diff --git a/chrome/chrome_paks.gni b/chrome/chrome_paks.gni
 diff --git a/chrome/common/renderer_configuration.mojom b/chrome/common/renderer_configuration.mojom
 --- a/chrome/common/renderer_configuration.mojom
 +++ b/chrome/common/renderer_configuration.mojom
-@@ -29,6 +29,7 @@ struct DynamicParams {
+@@ -30,6 +30,7 @@ struct DynamicParams {
    bool force_safe_search = true;
    int32 youtube_restrict = 0;
    string allowed_domains_for_apps;
@@ -553,7 +552,7 @@ diff --git a/chrome/common/renderer_configuration.mojom b/chrome/common/renderer
 diff --git a/chrome/renderer/BUILD.gn b/chrome/renderer/BUILD.gn
 --- a/chrome/renderer/BUILD.gn
 +++ b/chrome/renderer/BUILD.gn
-@@ -242,6 +242,12 @@ static_library("renderer") {
+@@ -236,6 +236,12 @@ static_library("renderer") {
      "//v8",
    ]
  
@@ -569,8 +568,8 @@ diff --git a/chrome/renderer/BUILD.gn b/chrome/renderer/BUILD.gn
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
-@@ -261,6 +261,11 @@
- #include "chrome/renderer/cco/multiline_detector.h"
+@@ -266,6 +266,11 @@
+ #include "chrome/renderer/media/chrome_key_systems.h"
  #endif
  
 +#if BUILDFLAG(IS_ANDROID)
@@ -581,9 +580,9 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
  using autofill::AutofillAgent;
  using autofill::PasswordAutofillAgent;
  using autofill::PasswordGenerationAgent;
-@@ -457,6 +462,14 @@ void ChromeContentRendererClient::RenderThreadStarted() {
+@@ -469,6 +474,14 @@ void ChromeContentRendererClient::RenderThreadStarted() {
        WebString::FromASCII(extensions::kExtensionScheme));
- #endif
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS_CORE)
  
 +#if BUILDFLAG(IS_ANDROID)
 +  user_scripts::UserScriptsRendererClient* userscript_client =
@@ -596,8 +595,8 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
  #if BUILDFLAG(ENABLE_SPELLCHECK)
    if (!spellcheck_)
      InitSpellCheck();
-@@ -620,6 +633,15 @@ void ChromeContentRendererClient::RenderFrameCreated(
-       render_frame, registry);
+@@ -636,6 +649,15 @@ void ChromeContentRendererClient::RenderFrameCreated(
+                                                                   registry);
  #endif
  
 +#if BUILDFLAG(IS_ANDROID)
@@ -612,7 +611,7 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
  #if BUILDFLAG(ENABLE_PPAPI)
    new PepperHelper(render_frame);
  #endif
-@@ -1640,6 +1662,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentStart(
+@@ -1677,6 +1699,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentStart(
        render_frame);
    // |render_frame| might be dead by now.
  #endif
@@ -630,7 +629,7 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
  }
  
  void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
-@@ -1649,6 +1682,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
+@@ -1686,6 +1719,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
        render_frame);
    // |render_frame| might be dead by now.
  #endif
@@ -648,7 +647,7 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
  }
  
  void ChromeContentRendererClient::RunScriptsAtDocumentIdle(
-@@ -1658,6 +1702,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentIdle(
+@@ -1695,6 +1739,17 @@ void ChromeContentRendererClient::RunScriptsAtDocumentIdle(
        render_frame);
    // |render_frame| might be dead by now.
  #endif
@@ -678,7 +677,7 @@ diff --git a/chrome/renderer/chrome_render_thread_observer.cc b/chrome/renderer/
  #if BUILDFLAG(IS_CHROMEOS_ASH)
  #include "chrome/renderer/ash_merge_session_loader_throttle.h"
  #endif
-@@ -224,6 +226,9 @@ void ChromeRenderThreadObserver::SetConfiguration(
+@@ -222,6 +224,9 @@ void ChromeRenderThreadObserver::SetConfiguration(
      chrome::mojom::DynamicParamsPtr params) {
    base::AutoLock lock(dynamic_params_lock_);
    dynamic_params_ = std::move(params);
@@ -691,14 +690,14 @@ diff --git a/chrome/renderer/chrome_render_thread_observer.cc b/chrome/renderer/
 diff --git a/components/components_strings.grd b/components/components_strings.grd
 --- a/components/components_strings.grd
 +++ b/components/components_strings.grd
-@@ -337,6 +337,7 @@
+@@ -342,6 +342,7 @@
        <part file="user_education_strings.grdp" />
        <part file="version_ui_strings.grdp" />
        <part file="webapps_strings.grdp" />
 +      <part file="user_scripts/strings/userscripts_strings.grdp" />
-       <if expr="use_blink">
-         <part file="history_clusters_strings.grdp" />
-       </if>
+       <part file="collaboration_strings.grdp" />
+       <if expr="is_android">
+         <part file="android_system_error_page_strings.grdp" />
 diff --git a/components/user_scripts/README.md b/components/user_scripts/README.md
 new file mode 100644
 --- /dev/null
@@ -858,7 +857,7 @@ diff --git a/components/user_scripts/android/BUILD.gn b/components/user_scripts/
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/android/BUILD.gn
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,86 @@
 +# This file is part of Bromite.
 +
 +# Bromite is free software: you can redistribute it and/or modify
@@ -878,17 +877,18 @@ new file mode 100755
 +import("//third_party/jni_zero/jni_zero.gni")
 +
 +generate_jni("user_scripts_jni_headers") {
-+  sources = [ "java/src/org/chromium/components/user_scripts/UserScriptsBridge.java" ]
++  sources =
++      [ "java/src/org/chromium/components/user_scripts/UserScriptsBridge.java" ]
 +}
 +
 +android_resources("java_resources") {
 +  sources = [
-+    "java/res/xml/userscripts_preferences.xml",
 +    "java/res/layout/accept_script_item.xml",
 +    "java/res/layout/accept_script_list.xml",
 +    "java/res/layout/scripts_preference.xml",
-+    "java/res/values/dimens.xml"
-+   ]
++    "java/res/values/dimens.xml",
++    "java/res/xml/userscripts_preferences.xml",
++  ]
 +
 +  deps = [
 +    "//components/browser_ui/strings/android:browser_ui_strings_grd",
@@ -901,29 +901,30 @@ new file mode 100755
 +android_library("java") {
 +  sources = [
 +    "java/src/org/chromium/components/user_scripts/FragmentWindowAndroid.java",
-+    "java/src/org/chromium/components/user_scripts/UserScriptsPreferences.java",
-+    "java/src/org/chromium/components/user_scripts/UserScriptsBridge.java",
 +    "java/src/org/chromium/components/user_scripts/IUserScriptsUtils.java",
++    "java/src/org/chromium/components/user_scripts/ScriptInfo.java",
 +    "java/src/org/chromium/components/user_scripts/ScriptListBaseAdapter.java",
 +    "java/src/org/chromium/components/user_scripts/ScriptListPreference.java",
-+    "java/src/org/chromium/components/user_scripts/ScriptInfo.java",
++    "java/src/org/chromium/components/user_scripts/UserScriptsBridge.java",
++    "java/src/org/chromium/components/user_scripts/UserScriptsPreferences.java",
 +  ]
 +  deps = [
 +    ":java_resources",
 +    "//base:base_java",
-+    "//third_party/jni_zero:jni_zero_java",
-+    "//components/embedder_support/android:browser_context_java",
++    "//base:content_uri_utils_java",
++    "//build/android:build_java",
 +    "//components/browser_ui/settings/android:java",
 +    "//components/browser_ui/widget/android:java",
-+    "//content/public/android:content_java",
++    "//components/embedder_support/android:browser_context_java",
 +    "//components/prefs/android:java",
-+    "//build/android:build_java",
-+    "//third_party/androidx:androidx_fragment_fragment_java",
-+    "//third_party/androidx:androidx_recyclerview_recyclerview_java",
++    "//content/public/android:content_java",
 +    "//third_party/androidx:androidx_annotation_annotation_java",
 +    "//third_party/androidx:androidx_appcompat_appcompat_resources_java",
-+    "//third_party/androidx:androidx_preference_preference_java",
 +    "//third_party/androidx:androidx_core_core_java",
++    "//third_party/androidx:androidx_fragment_fragment_java",
++    "//third_party/androidx:androidx_preference_preference_java",
++    "//third_party/androidx:androidx_recyclerview_recyclerview_java",
++    "//third_party/jni_zero:jni_zero_java",
 +    "//ui/android:ui_java",
 +  ]
 +  srcjar_deps = [ ":user_scripts_jni_headers" ]
@@ -938,8 +939,8 @@ new file mode 100755
 +  deps = [
 +    ":user_scripts_jni_headers",
 +    "//base",
-+    "//components/user_scripts/browser",
 +    "//components/permissions",
++    "//components/user_scripts/browser",
 +    "//content/public/browser",
 +  ]
 +}
@@ -1229,7 +1230,7 @@ diff --git a/components/user_scripts/android/java/src/org/chromium/chrome/browse
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/android/java/src/org/chromium/chrome/browser/user_scripts/UserScriptsUtils.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,88 @@
 +/*
 +    This file is part of Bromite.
 +
@@ -1260,8 +1261,8 @@ new file mode 100755
 +import org.chromium.base.IntentUtils;
 +
 +import org.chromium.chrome.browser.IntentHandler;
-+import org.chromium.chrome.browser.settings.SettingsLauncherImpl;
-+import org.chromium.components.browser_ui.settings.SettingsLauncher;
++import org.chromium.chrome.browser.settings.SettingsNavigationFactory;
++import org.chromium.components.browser_ui.settings.SettingsNavigation;
 +
 +import org.chromium.components.user_scripts.UserScriptsPreferences;
 +import org.chromium.components.user_scripts.UserScriptsBridge;
@@ -1297,9 +1298,10 @@ new file mode 100755
 +
 +        if (visibleName.toUpperCase().endsWith(".USER.JS") == false) return false;
 +
-+        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
-+        Intent intent = settingsLauncher.createSettingsActivityIntent(
-+                context, UserScriptsPreferences.class.getName(),
++        SettingsNavigation settingsNavigation =
++                    SettingsNavigationFactory.createSettingsNavigation();
++        Intent intent = settingsNavigation.createSettingsIntent(
++                context, UserScriptsPreferences.class,
 +                UserScriptsPreferences.createFragmentArgsForInstall(filePath));
 +        IntentUtils.safeStartActivity(context, intent);
 +
@@ -1321,7 +1323,7 @@ diff --git a/components/user_scripts/android/java/src/org/chromium/components/us
 new file mode 100644
 --- /dev/null
 +++ b/components/user_scripts/android/java/src/org/chromium/components/user_scripts/FragmentWindowAndroid.java
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,93 @@
 +// Copyright 2019 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -1337,12 +1339,14 @@ new file mode 100644
 +import android.view.View;
 +
 +import androidx.fragment.app.Fragment;
++import androidx.annotation.Nullable;
 +
 +import org.chromium.ui.base.ActivityKeyboardVisibilityDelegate;
 +import org.chromium.ui.base.ImmutableWeakReference;
 +import org.chromium.ui.base.IntentRequestTracker;
 +import org.chromium.ui.base.IntentRequestTracker.Delegate;
 +import org.chromium.ui.base.WindowAndroid;
++import org.chromium.ui.InsetObserver;
 +
 +import java.lang.ref.WeakReference;
 +
@@ -1404,8 +1408,9 @@ new file mode 100644
 +        }
 +    }
 +
-+    FragmentWindowAndroid(Context context, Fragment fragment) {
-+        super(context, IntentRequestTracker.createFromDelegate(new TrackerDelegateImpl(fragment)));
++    FragmentWindowAndroid(Context context, Fragment fragment, @Nullable InsetObserver insetObserver) {
++        super(context, IntentRequestTracker.createFromDelegate(new TrackerDelegateImpl(fragment)),
++              insetObserver, /* trackOcclusion= */ true);
 +        mFragment = fragment;
 +
 +        setKeyboardDelegate(new ActivityKeyboardVisibilityDelegate(getActivity()));
@@ -1527,7 +1532,7 @@ new file mode 100644
 +import org.chromium.components.browser_ui.widget.dragreorder.DragReorderableListAdapter;
 +import org.chromium.components.browser_ui.widget.dragreorder.DragStateDelegate;
 +import org.chromium.ui.listmenu.ListMenuButton;
-+import org.chromium.ui.listmenu.ListMenuButtonDelegate;
++import org.chromium.ui.listmenu.ListMenuDelegate;
 +import org.chromium.ui.widget.ChromeImageView;
 +
 +import java.util.ArrayList;
@@ -1600,7 +1605,7 @@ new file mode 100644
 +            }
 +        }
 +
-+        void setMenuButtonDelegate(@NonNull ListMenuButtonDelegate delegate) {
++        void setMenuButtonDelegate(@NonNull ListMenuDelegate delegate) {
 +            mMoreButton.setVisibility(View.VISIBLE);
 +            mMoreButton.setDelegate(delegate);
 +            // Set item row end padding 0 when MenuButton is visible.
@@ -1628,11 +1633,11 @@ new file mode 100644
 +
 +    @Override
 +    public void onBindViewHolder(ViewHolder viewHolder, int i) {
-+        ((ScriptInfoRowViewHolder) viewHolder).updateScriptInfo(mElements.get(i));
++        ((ScriptInfoRowViewHolder) viewHolder).updateScriptInfo(mItems.get(i));
 +    }
 +
 +    void setDisplayedScriptInfo(List<ScriptInfo> values) {
-+        mElements = new ArrayList<>(values);
++        mItems = new ArrayList<>(values);
 +        notifyDataSetChanged();
 +    }
 +
@@ -2126,7 +2131,7 @@ new file mode 100755
 +            return true;
 +        });
 +
-+        mWindowAndroid = new FragmentWindowAndroid(getContext(), this);
++        mWindowAndroid = new FragmentWindowAndroid(getContext(), this, /*InsetObserver*/ null);
 +        listPreference.setWindowAndroid(mWindowAndroid);
 +    }
 +
@@ -2573,7 +2578,7 @@ new file mode 100644
 --- /dev/null
 +++ b/components/user_scripts/browser/resources/browser_resources.grd
 @@ -0,0 +1,14 @@
-+<grit latest_public_release="0" current_release="1" output_all_resource_defines="false">
++<grit latest_public_release="0" current_release="1">
 +  <outputs>
 +    <output filename="grit/userscripts_browser_resources.h" type="rc_header">
 +      <emit emit_type='prepend'></emit>
@@ -2587,7 +2592,6 @@ new file mode 100644
 +    </includes>
 +  </release>
 +</grit>
-\ No newline at end of file
 diff --git a/components/user_scripts/browser/resources/user-script-ui/BUILD.gn b/components/user_scripts/browser/resources/user-script-ui/BUILD.gn
 new file mode 100644
 --- /dev/null
@@ -2758,7 +2762,7 @@ new file mode 100644
 +      base::Value::Dict scriptData;
 +      for (const std::unique_ptr<user_scripts::UserScript::File>& js_file :
 +          script->js_scripts()) {
-+        base::StringPiece contents = js_file->GetContent();
++        std::string_view contents = js_file->GetContent();
 +        scriptData.Set("content", contents.data());
 +      }
 +      response.Append(std::move(scriptData));
@@ -2789,7 +2793,7 @@ diff --git a/components/user_scripts/browser/ui/user_scripts_ui.h b/components/u
 new file mode 100644
 --- /dev/null
 +++ b/components/user_scripts/browser/ui/user_scripts_ui.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,46 @@
 +/*
 +    This file is part of Bromite.
 +
@@ -2811,6 +2815,7 @@ new file mode 100644
 +#define USERSCRIPTS_BROWSER_UI_USER_SCRIPTS_UI_H_
 +
 +#include "content/public/browser/web_ui_controller.h"
++#include "content/public/browser/webui_config.h"
 +
 +namespace user_scripts {
 +
@@ -2824,6 +2829,14 @@ new file mode 100644
 +  ~UserScriptsUI() override;
 +};
 +
++class UserScriptsUIConfig
++    : public content::DefaultWebUIConfig<UserScriptsUI> {
++ public:
++  UserScriptsUIConfig()
++      : DefaultWebUIConfig(content::kChromeUIScheme,
++                           user_scripts::kChromeUIUserScriptsHost) {}
++};
++
 +}
 +
 +#endif
@@ -2831,7 +2844,7 @@ diff --git a/components/user_scripts/browser/user_script_loader.cc b/components/
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/browser/user_script_loader.cc
-@@ -0,0 +1,716 @@
+@@ -0,0 +1,702 @@
 +/*
 +    This file is part of Bromite.
 +
@@ -2880,8 +2893,6 @@ new file mode 100755
 +#include "content/public/browser/browser_context.h"
 +#include "content/public/browser/browser_task_traits.h"
 +#include "content/public/browser/browser_thread.h"
-+#include "content/public/browser/notification_service.h"
-+#include "content/public/browser/notification_types.h"
 +#include "content/public/browser/render_process_host.h"
 +#include "ui/shell_dialogs/selected_file_info.h"
 +#include "ui/shell_dialogs/select_file_dialog.h"
@@ -2903,38 +2914,36 @@ new file mode 100755
 +
 +namespace {
 +
-+static const base::StringPiece kUserScriptBegin("// ==UserScript==");
-+static const base::StringPiece kUserScriptEnd("// ==/UserScript==");
-+static const base::StringPiece kNamespaceDeclaration("// @namespace");
-+static const base::StringPiece kNameDeclaration("// @name");
-+static const base::StringPiece kVersionDeclaration("// @version");
-+static const base::StringPiece kDescriptionDeclaration("// @description");
-+static const base::StringPiece kIncludeDeclaration("// @include");
-+static const base::StringPiece kExcludeDeclaration("// @exclude");
-+static const base::StringPiece kMatchDeclaration("// @match");
-+static const base::StringPiece kExcludeMatchDeclaration("// @exclude_match");
-+static const base::StringPiece kRunAtDeclaration("// @run-at");
-+static const base::StringPiece kRunAtDocumentStartValue("document-start");
-+static const base::StringPiece kRunAtDocumentEndValue("document-end");
-+static const base::StringPiece kRunAtDocumentIdleValue("document-idle");
-+static const base::StringPiece kUrlSourceDeclaration("// @url");
-+static const base::StringPiece kUrlHomePageDeclaration("// @homepage");
++static const std::string_view kUserScriptBegin("// ==UserScript==");
++static const std::string_view kUserScriptEnd("// ==/UserScript==");
++static const std::string_view kNamespaceDeclaration("// @namespace");
++static const std::string_view kNameDeclaration("// @name");
++static const std::string_view kVersionDeclaration("// @version");
++static const std::string_view kDescriptionDeclaration("// @description");
++static const std::string_view kIncludeDeclaration("// @include");
++static const std::string_view kExcludeDeclaration("// @exclude");
++static const std::string_view kMatchDeclaration("// @match");
++static const std::string_view kExcludeMatchDeclaration("// @exclude_match");
++static const std::string_view kRunAtDeclaration("// @run-at");
++static const std::string_view kRunAtDocumentStartValue("document-start");
++static const std::string_view kRunAtDocumentEndValue("document-end");
++static const std::string_view kRunAtDocumentIdleValue("document-idle");
++static const std::string_view kUrlSourceDeclaration("// @url");
++static const std::string_view kUrlHomePageDeclaration("// @homepage");
 +
 +// internal use
-+static const base::StringPiece kParserError("// @error");
-+static const base::StringPiece kForceDisabled("// @disabled");
++static const std::string_view kParserError("// @error");
++static const std::string_view kForceDisabled("// @disabled");
 +
 +// Helper function to parse greasesmonkey headers
-+bool GetDeclarationValue(const base::StringPiece& line,
-+                         const base::StringPiece& prefix,
++bool GetDeclarationValue(const std::string_view& line,
++                         const std::string_view& prefix,
 +                         std::string* value) {
-+  base::StringPiece::size_type index = line.find(prefix);
-+  if (index == base::StringPiece::npos)
++  std::string_view::size_type index = line.find(prefix);
++  if (index == std::string_view::npos)
 +    return false;
 +
-+  std::string temp(line.data() + index + prefix.length(),
-+                   line.length() - index - prefix.length());
-+
++  std::string_view temp = line.substr(index + prefix.length());
 +  if (temp.empty() || !base::IsAsciiWhitespace(temp[0]))
 +    return false;
 +
@@ -2945,12 +2954,12 @@ new file mode 100755
 +}  // namespace
 +
 +// static
-+bool UserScriptLoader::ParseMetadataHeader(const base::StringPiece& script_text,
++bool UserScriptLoader::ParseMetadataHeader(const std::string_view& script_text,
 +                                           std::unique_ptr<UserScript>& script,
 +                                           bool *found_metadata,
 +                                           std::string& error_message) {
 +  // http://wiki.greasespot.net/Metadata_block
-+  base::StringPiece line;
++  std::string_view line;
 +  size_t line_start = 0;
 +  size_t line_end = line_start;
 +  *found_metadata = false;
@@ -2962,8 +2971,8 @@ new file mode 100755
 +    if (line_end == std::string::npos)
 +      line_end = script_text.length() - 1;
 +
-+    line = base::StringPiece(script_text.data() + line_start,
-+                             line_end - line_start);
++    line = script_text.substr(line_start,
++                              line_end - line_start);
 +
 +    if (!*found_metadata) {
 +      if (base::StartsWith(line, kUserScriptBegin))
@@ -3049,13 +3058,11 @@ new file mode 100755
 +
 +    base::File infile;
 +    if (user_script_path.IsContentUri()) {
-+      if (base::FeatureList::IsEnabled(features::kEnableLoggingUserScripts))
++      if (base::FeatureList::IsEnabled(features::kEnableLoggingUserScripts)) {
 +        LOG(INFO) << "UserScriptLoader: path " << user_script_path << " is a content uri";
-+
-+      infile = OpenContentUriForRead(user_script_path);
-+    } else {
-+      infile = base::File(user_script_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
++      }
 +    }
++    infile = base::File(user_script_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
 +
 +    if (!infile.IsValid()) {
 +      base::File::Error out_error = infile.error_details();
@@ -3071,8 +3078,8 @@ new file mode 100755
 +    }
 +
 +    auto buffer = std::vector<char>(length);
-+    int bytes_read = infile.Read(0, buffer.data(), length);
-+    if (bytes_read == -1) {
++    std::optional<size_t> bytes_read = infile.Read(0, base::as_writable_byte_span(buffer));
++    if (!bytes_read.has_value()) {
 +      *error = u"Could not read source file.";
 +      return false;
 +    }
@@ -3101,7 +3108,7 @@ new file mode 100755
 +    // create SHA256 of file
 +    char raw[crypto::kSHA256Length] = {0};
 +    crypto::SHA256HashString(content, raw, crypto::kSHA256Length);
-+    std::string key = base::Base64Encode(base::StringPiece(raw, crypto::kSHA256Length));
++    std::string key = base::Base64Encode(std::string_view(raw, crypto::kSHA256Length));
 +    file->set_key(key);
 +
 +    file->set_url(GURL(base::StrCat({"https://userscripts/file/", key, ".js"})));
@@ -3238,12 +3245,12 @@ new file mode 100755
 +    // allocating a new string.
 +    for (const std::unique_ptr<UserScript::File>& js_file :
 +         script->js_scripts()) {
-+      base::StringPiece contents = js_file->GetContent();
++      std::string_view contents = js_file->GetContent();
 +      pickle.WriteData(contents.data(), contents.length());
 +    }
 +    for (const std::unique_ptr<UserScript::File>& css_file :
 +         script->css_scripts()) {
-+      base::StringPiece contents = css_file->GetContent();
++      std::string_view contents = css_file->GetContent();
 +      pickle.WriteData(contents.data(), contents.length());
 +    }
 +  }
@@ -3411,17 +3418,11 @@ new file mode 100755
 +      ui::SelectFileDialog::FileTypeInfo::ANY_PATH;
 +  base::FilePath suggested_name;
 +
-+  std::vector<std::u16string> types;
-+  types.push_back(u"*/*"); /*= java SelectFileDialog.ALL_TYPES*/
-+  std::pair<std::vector<std::u16string>, bool> accept_types = std::make_pair(
-+      types, false /*use_media_capture*/);
-+
 +  dialog_->SelectFile(
 +      ui::SelectFileDialog::SELECT_OPEN_FILE,
 +      std::u16string() /* dialog title*/, suggested_name, &allowed_file_info,
-+      0 /* file type index */, std::string() /* default file extension */,
-+      nativeWindow,
-+      &accept_types /* params */);
++      0 /* file type index */, base::FilePath::StringType() /* default file extension */,
++      nativeWindow);
 +}
 +
 +
@@ -3528,7 +3529,7 @@ new file mode 100755
 +}
 +
 +void UserScriptLoader::FileSelected(
-+    const ui::SelectedFileInfo& file, int index, void* params) {
++    const ui::SelectedFileInfo& file, int index) {
 +  if (base::FeatureList::IsEnabled(features::kEnableLoggingUserScripts))
 +    LOG(INFO) << "UserScriptLoader: FileSelected " << file.path();
 +
@@ -3543,9 +3544,7 @@ new file mode 100755
 +  StartLoad();
 +}
 +
-+void UserScriptLoader::FileSelectionCanceled(
-+    void* params) {
-+}
++void UserScriptLoader::FileSelectionCanceled() {}
 +
 +}  // namespace extensions
 diff --git a/components/user_scripts/browser/user_script_loader.h b/components/user_scripts/browser/user_script_loader.h
@@ -3627,7 +3626,7 @@ new file mode 100755
 +  };
 +
 +  // Parses the includes out of |script| and returns them in |includes|.
-+  static bool ParseMetadataHeader(const base::StringPiece& script_text,
++  static bool ParseMetadataHeader(const std::string_view& script_text,
 +                                  std::unique_ptr<UserScript>& script,
 +                                  bool *found_metadata,
 +                                  std::string& error_message);
@@ -3710,8 +3709,8 @@ new file mode 100755
 +  // Manage file dialog requests
 +  scoped_refptr<ui::SelectFileDialog> dialog_;
 +  void FileSelected(const ui::SelectedFileInfo& file,
-+                    int index, void* params) override;
-+  void FileSelectionCanceled(void* params) override;
++                    int index) override;
++  void FileSelectionCanceled() override;
 +  void LoadScriptFromPathOnFileTaskRunnerCallback(
 +                    bool result, const std::string& error );
 +
@@ -3841,7 +3840,7 @@ diff --git a/components/user_scripts/browser/user_script_prefs.cc b/components/u
 new file mode 100644
 --- /dev/null
 +++ b/components/user_scripts/browser/user_script_prefs.cc
-@@ -0,0 +1,275 @@
+@@ -0,0 +1,276 @@
 +/*
 +    This file is part of Bromite.
 +
@@ -3863,6 +3862,7 @@ new file mode 100644
 +
 +#include "base/values.h"
 +#include "base/strings/string_number_conversions.h"
++#include "base/strings/string_util.h"
 +#include "base/json/json_writer.h"
 +
 +#include "chrome/browser/browser_process.h"
@@ -4430,13 +4430,13 @@ new file mode 100755
 +namespace {
 +
 +std::string FormatErrorMessageInternal(
-+    base::StringPiece format,
-+    std::initializer_list<base::StringPiece> args) {
++    std::string_view format,
++    std::initializer_list<std::string_view> args) {
 +  std::string format_str = format.as_string();
 +  base::StringTokenizer tokenizer(format_str, "*");
 +  tokenizer.set_options(base::StringTokenizer::RETURN_DELIMS);
 +
-+  std::vector<base::StringPiece> result_pieces;
++  std::vector<std::string_view> result_pieces;
 +  auto* args_it = args.begin();
 +  while (tokenizer.GetNext()) {
 +    if (!tokenizer.token_is_delim()) {
@@ -4460,8 +4460,8 @@ new file mode 100755
 +
 +}  // namespace
 +
-+std::string ErrorUtils::FormatErrorMessage(base::StringPiece format,
-+                                           base::StringPiece s1) {
++std::string ErrorUtils::FormatErrorMessage(std::string_view format,
++                                           std::string_view s1) {
 +  return FormatErrorMessageInternal(format, {s1});
 +}
 +
@@ -4470,7 +4470,7 @@ diff --git a/components/user_scripts/common/error_utils.h b/components/user_scri
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/error_utils.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,22 @@
 +// Copyright (c) 2011 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -4480,15 +4480,13 @@ new file mode 100755
 +
 +#include <string>
 +
-+#include "base/strings/string_piece.h"
-+
 +namespace user_scripts {
 +
 +class ErrorUtils {
 + public:
 +   // Creates an error messages from a pattern.
-+   static std::string FormatErrorMessage(base::StringPiece format,
-+                                         base::StringPiece s1);
++   static std::string FormatErrorMessage(std::string_view format,
++                                         std::string_view s1);
 +
 +};
 +
@@ -4783,7 +4781,7 @@ diff --git a/components/user_scripts/common/url_pattern.cc b/components/user_scr
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/url_pattern.cc
-@@ -0,0 +1,803 @@
+@@ -0,0 +1,813 @@
 +// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -4798,7 +4796,6 @@ new file mode 100755
 +#include "base/strings/pattern.h"
 +#include "base/strings/strcat.h"
 +#include "base/strings/string_number_conversions.h"
-+#include "base/strings/string_piece.h"
 +#include "base/strings/string_split.h"
 +#include "base/strings/string_util.h"
 +#include "base/strings/stringprintf.h"
@@ -4808,6 +4805,8 @@ new file mode 100755
 +#include "net/base/url_util.h"
 +#include "url/gurl.h"
 +#include "url/url_util.h"
++
++namespace user_scripts {
 +
 +const char URLPattern::kAllUrlsPattern[] = "<all_urls>";
 +
@@ -4865,7 +4864,7 @@ new file mode 100755
 +
 +const char kPathSeparator[] = "/";
 +
-+bool IsStandardScheme(base::StringPiece scheme) {
++bool IsStandardScheme(std::string_view scheme) {
 +  // "*" gets the same treatment as a standard scheme.
 +  if (scheme == "*")
 +    return true;
@@ -4874,19 +4873,20 @@ new file mode 100755
 +                         url::Component(0, static_cast<int>(scheme.length())));
 +}
 +
-+bool IsValidPortForScheme(base::StringPiece scheme, base::StringPiece port) {
-+  if (port == "*")
++bool IsValidPortForScheme(std::string_view scheme, std::string_view port) {
++  if (port == "*") {
 +    return true;
++  }
 +
 +  // Only accept non-wildcard ports if the scheme uses ports.
-+  if (url::DefaultPortForScheme(scheme.data(), scheme.length()) ==
-+      url::PORT_UNSPECIFIED) {
++  if (url::DefaultPortForScheme(scheme) == url::PORT_UNSPECIFIED) {
 +    return false;
 +  }
 +
 +  int parsed_port = url::PORT_UNSPECIFIED;
-+  if (!base::StringToInt(port, &parsed_port))
++  if (!base::StringToInt(port, &parsed_port)) {
 +    return false;
++  }
 +  return (parsed_port >= 0) && (parsed_port < 65536);
 +}
 +
@@ -4897,14 +4897,14 @@ new file mode 100755
 +// the path will have only a single wildcard at the end. This makes figuring
 +// out overlap much easier. It seems like there is probably a computer-sciency
 +// way to solve the general case, but we don't need that yet.
-+base::StringPiece StripTrailingWildcard(base::StringPiece path) {
++std::string_view StripTrailingWildcard(std::string_view path) {
 +  if (base::EndsWith(path, "*"))
 +    path.remove_suffix(1);
 +  return path;
 +}
 +
 +// Removes trailing dot from |host_piece| if any.
-+base::StringPiece CanonicalizeHostForMatching(base::StringPiece host_piece) {
++std::string_view CanonicalizeHostForMatching(std::string_view host_piece) {
 +  if (base::EndsWith(host_piece, "."))
 +    host_piece.remove_suffix(1);
 +  return host_piece;
@@ -4913,9 +4913,10 @@ new file mode 100755
 +}  // namespace
 +
 +// static
-+bool URLPattern::IsValidSchemeForExtensions(base::StringPiece scheme) {
++bool URLPattern::IsValidSchemeForExtensions(std::string_view scheme) {
++  auto validSchemes = base::span(kValidSchemes);
 +  for (size_t i = 0; i < std::size(kValidSchemes); ++i) {
-+    if (scheme == kValidSchemes[i])
++    if (scheme == validSchemes[i])
 +      return true;
 +  }
 +  return false;
@@ -4923,9 +4924,10 @@ new file mode 100755
 +
 +// static
 +int URLPattern::GetValidSchemeMaskForExtensions() {
++  auto validSchemeMasks = base::span(kValidSchemeMasks);
 +  int result = 0;
 +  for (size_t i = 0; i < std::size(kValidSchemeMasks); ++i)
-+    result |= kValidSchemeMasks[i];
++    result |= validSchemeMasks[i];
 +  return result;
 +}
 +
@@ -4941,7 +4943,7 @@ new file mode 100755
 +      match_subdomains_(false),
 +      port_("*") {}
 +
-+URLPattern::URLPattern(int valid_schemes, base::StringPiece pattern)
++URLPattern::URLPattern(int valid_schemes, std::string_view pattern)
 +    // Strict error checking is used, because this constructor is only
 +    // appropriate when we know |pattern| is valid.
 +    : valid_schemes_(valid_schemes),
@@ -4981,7 +4983,7 @@ new file mode 100755
 +  return out << '"' << url_pattern.GetAsString() << '"';
 +}
 +
-+URLPattern::ParseResult URLPattern::Parse(base::StringPiece pattern) {
++URLPattern::ParseResult URLPattern::Parse(std::string_view pattern) {
 +  spec_.clear();
 +  SetMatchAllURLs(false);
 +  SetMatchSubdomains(false);
@@ -4998,12 +5000,12 @@ new file mode 100755
 +  bool has_standard_scheme_separator = true;
 +
 +  // Some urls also use ':' alone as the scheme separator.
-+  if (scheme_end_pos == base::StringPiece::npos) {
++  if (scheme_end_pos == std::string_view::npos) {
 +    scheme_end_pos = pattern.find(':');
 +    has_standard_scheme_separator = false;
 +  }
 +
-+  if (scheme_end_pos == base::StringPiece::npos)
++  if (scheme_end_pos == std::string_view::npos)
 +    return ParseResult::kMissingSchemeSeparator;
 +
 +  if (!SetScheme(pattern.substr(0, scheme_end_pos)))
@@ -5027,7 +5029,7 @@ new file mode 100755
 +    path_start_pos = host_start_pos;
 +  } else if (scheme_ == url::kFileScheme) {
 +    size_t host_end_pos = pattern.find(kPathSeparator, host_start_pos);
-+    if (host_end_pos == base::StringPiece::npos) {
++    if (host_end_pos == std::string_view::npos) {
 +      // Allow hostname omission.
 +      // e.g. file://* is interpreted as file:///*,
 +      // file://foo* is interpreted as file:///foo*.
@@ -5044,19 +5046,19 @@ new file mode 100755
 +    if (host_start_pos == host_end_pos)
 +      return ParseResult::kEmptyHost;
 +
-+    if (host_end_pos == base::StringPiece::npos)
++    if (host_end_pos == std::string_view::npos)
 +      return ParseResult::kEmptyPath;
 +
-+    base::StringPiece host_and_port =
++    std::string_view host_and_port =
 +        pattern.substr(host_start_pos, host_end_pos - host_start_pos);
 +
-+    size_t port_separator_pos = base::StringPiece::npos;
++    size_t port_separator_pos = std::string_view::npos;
 +    if (host_and_port[0] != '[') {
 +      // Not IPv6 (either IPv4 or just a normal address).
 +      port_separator_pos = host_and_port.find(':');
 +    } else {  // IPv6.
 +      size_t ipv6_host_end_pos = host_and_port.find(']');
-+      if (ipv6_host_end_pos == base::StringPiece::npos)
++      if (ipv6_host_end_pos == std::string_view::npos)
 +        return ParseResult::kInvalidHost;
 +      if (ipv6_host_end_pos == 1)
 +        return ParseResult::kEmptyHost;
@@ -5071,21 +5073,21 @@ new file mode 100755
 +      }
 +    }
 +
-+    if (port_separator_pos != base::StringPiece::npos &&
++    if (port_separator_pos != std::string_view::npos &&
 +        !SetPort(host_and_port.substr(port_separator_pos + 1))) {
 +      return ParseResult::kInvalidPort;
 +    }
 +
 +    // Note: this substr() will be the entire string if the port position
 +    // wasn't found.
-+    base::StringPiece host_piece = host_and_port.substr(0, port_separator_pos);
++    std::string_view host_piece = host_and_port.substr(0, port_separator_pos);
 +
 +    if (host_piece.empty())
 +      return ParseResult::kEmptyHost;
 +
 +    if (host_piece == "*") {
 +      match_subdomains_ = true;
-+      host_piece = base::StringPiece();
++      host_piece = std::string_view();
 +    } else if (base::StartsWith(host_piece, "*.")) {
 +      if (host_piece.length() == 2) {
 +        // We don't allow just '*.' as a host.
@@ -5134,7 +5136,7 @@ new file mode 100755
 +  valid_schemes_ = valid_schemes;
 +}
 +
-+void URLPattern::SetHost(base::StringPiece host) {
++void URLPattern::SetHost(std::string_view host) {
 +  spec_.clear();
 +  host_.assign(host.data(), host.size());
 +}
@@ -5156,7 +5158,7 @@ new file mode 100755
 +  match_subdomains_ = val;
 +}
 +
-+bool URLPattern::SetScheme(base::StringPiece scheme) {
++bool URLPattern::SetScheme(std::string_view scheme) {
 +  spec_.clear();
 +  scheme_.assign(scheme.data(), scheme.size());
 +  if (scheme_ == "*") {
@@ -5167,19 +5169,21 @@ new file mode 100755
 +  return true;
 +}
 +
-+bool URLPattern::IsValidScheme(base::StringPiece scheme) const {
++bool URLPattern::IsValidScheme(std::string_view scheme) const {
 +  if (valid_schemes_ == SCHEME_ALL)
 +    return true;
 +
++  auto validSchemes = base::span(kValidSchemes);
++  auto validSchemeMasks = base::span(kValidSchemeMasks);
 +  for (size_t i = 0; i < std::size(kValidSchemes); ++i) {
-+    if (scheme == kValidSchemes[i] && (valid_schemes_ & kValidSchemeMasks[i]))
++    if (scheme == validSchemes[i] && (valid_schemes_ & validSchemeMasks[i]))
 +      return true;
 +  }
 +
 +  return false;
 +}
 +
-+void URLPattern::SetPath(base::StringPiece path) {
++void URLPattern::SetPath(std::string_view path) {
 +  spec_.clear();
 +  path_.assign(path.data(), path.size());
 +  path_escaped_ = path_;
@@ -5187,7 +5191,7 @@ new file mode 100755
 +  base::ReplaceSubstringsAfterOffset(&path_escaped_, 0, "?", "\\?");
 +}
 +
-+bool URLPattern::SetPort(base::StringPiece port) {
++bool URLPattern::SetPort(std::string_view port) {
 +  spec_.clear();
 +  if (IsValidPortForScheme(scheme_, port)) {
 +    port_.assign(port.data(), port.size());
@@ -5252,14 +5256,14 @@ new file mode 100755
 +  return MatchesSecurityOriginHelper(*test_url);
 +}
 +
-+bool URLPattern::MatchesScheme(base::StringPiece test) const {
++bool URLPattern::MatchesScheme(std::string_view test) const {
 +  if (!IsValidScheme(test))
 +    return false;
 +
 +  return scheme_ == "*" || test == scheme_;
 +}
 +
-+bool URLPattern::MatchesHost(base::StringPiece host) const {
++bool URLPattern::MatchesHost(std::string_view host) const {
 +  // TODO(devlin): This is a bit sad. Parsing urls is expensive. However, it's
 +  // important that we do this conversion to a GURL in order to canonicalize the
 +  // host (the pattern's host_ already is canonicalized from Parse()). We can't
@@ -5270,8 +5274,8 @@ new file mode 100755
 +}
 +
 +bool URLPattern::MatchesHost(const GURL& test) const {
-+  base::StringPiece test_host(CanonicalizeHostForMatching(test.host_piece()));
-+  const base::StringPiece pattern_host(CanonicalizeHostForMatching(host_));
++  std::string_view test_host(CanonicalizeHostForMatching(test.host_piece()));
++  const std::string_view pattern_host(CanonicalizeHostForMatching(host_));
 +
 +  // If the hosts are exactly equal, we have a match.
 +  if (test_host == pattern_host)
@@ -5337,7 +5341,7 @@ new file mode 100755
 +  return !MatchesEffectiveTld() && scheme_ != "*" && !match_subdomains_;
 +}
 +
-+bool URLPattern::MatchesPath(base::StringPiece test) const {
++bool URLPattern::MatchesPath(std::string_view test) const {
 +  // Make the behaviour of OverlapsWith consistent with MatchesURL, which is
 +  // need to match hosted apps on e.g. 'google.com' also run on 'google.com/'.
 +  // The below if is a no-copy way of doing (test + "/*" == path_escaped_).
@@ -5414,7 +5418,7 @@ new file mode 100755
 +         MatchesPath(StripTrailingWildcard(other.path()));
 +}
 +
-+absl::optional<URLPattern> URLPattern::CreateIntersection(
++std::optional<URLPattern> URLPattern::CreateIntersection(
 +    const URLPattern& other) const {
 +  // Easy case: Schemes don't overlap. Return nullopt.
 +  int intersection_schemes = URLPattern::SCHEME_NONE;
@@ -5426,7 +5430,7 @@ new file mode 100755
 +    intersection_schemes = valid_schemes_ & other.valid_schemes_;
 +
 +  if (intersection_schemes == URLPattern::SCHEME_NONE)
-+    return absl::nullopt;
++    return std::nullopt;
 +
 +  {
 +    // In a few cases, we can (mostly) return a copy of one of the patterns.
@@ -5460,12 +5464,12 @@ new file mode 100755
 +
 +  // Note: Alias the function type (rather than using auto) because
 +  // MatchesHost() is overloaded.
-+  using match_function_type = bool (URLPattern::*)(base::StringPiece) const;
++  using match_function_type = bool (URLPattern::*)(std::string_view) const;
 +
-+  auto get_intersection = [this, &other](base::StringPiece own_str,
-+                                         base::StringPiece other_str,
++  auto get_intersection = [this, &other](std::string_view own_str,
++                                         std::string_view other_str,
 +                                         match_function_type match_function,
-+                                         base::StringPiece* out) {
++                                         std::string_view* out) {
 +    if ((this->*match_function)(other_str)) {
 +      *out = other_str;
 +      return true;
@@ -5477,10 +5481,10 @@ new file mode 100755
 +    return false;
 +  };
 +
-+  base::StringPiece scheme;
-+  base::StringPiece host;
-+  base::StringPiece port;
-+  base::StringPiece path;
++  std::string_view scheme;
++  std::string_view host;
++  std::string_view port;
++  std::string_view path;
 +  // If any pieces fail to overlap, then there is no intersection.
 +  if (!get_intersection(scheme_, other.scheme_, &URLPattern::MatchesScheme,
 +                        &scheme) ||
@@ -5488,18 +5492,18 @@ new file mode 100755
 +      !get_intersection(port_, other.port_, &URLPattern::MatchesPortPattern,
 +                        &port) ||
 +      !get_intersection(path_, other.path_, &URLPattern::MatchesPath, &path)) {
-+    return absl::nullopt;
++    return std::nullopt;
 +  }
 +
 +  // Only match subdomains if both patterns match subdomains.
-+  base::StringPiece subdomains;
++  std::string_view subdomains;
 +  if (match_subdomains_ && other.match_subdomains_) {
 +    // The host may be empty (e.g., in the case of *://*/* - in that case, only
 +    // append '*' instead of '*.'.
 +    subdomains = host.empty() ? "*" : "*.";
 +  }
 +
-+  base::StringPiece scheme_separator =
++  std::string_view scheme_separator =
 +      IsStandardScheme(scheme) ? url::kStandardSchemeSeparator : ":";
 +
 +  std::string pattern_str = base::StrCat(
@@ -5546,7 +5550,7 @@ new file mode 100755
 +  return true;
 +}
 +
-+bool URLPattern::MatchesPortPattern(base::StringPiece port) const {
++bool URLPattern::MatchesPortPattern(std::string_view port) const {
 +  return port_ == "*" || port_ == port;
 +}
 +
@@ -5558,9 +5562,10 @@ new file mode 100755
 +    return result;
 +  }
 +
++  auto validSchemes = base::span(kValidSchemes);
 +  for (size_t i = 0; i < std::size(kValidSchemes); ++i) {
-+    if (MatchesScheme(kValidSchemes[i])) {
-+      result.push_back(kValidSchemes[i]);
++    if (MatchesScheme(validSchemes[i])) {
++      result.push_back(validSchemes[i]);
 +    }
 +  }
 +
@@ -5585,13 +5590,16 @@ new file mode 100755
 +// static
 +const char* URLPattern::GetParseResultString(
 +    URLPattern::ParseResult parse_result) {
-+  return kParseResultMessages[static_cast<int>(parse_result)];
++  auto parseResultMessages = base::span(kParseResultMessages);
++  return parseResultMessages[static_cast<int>(parse_result)];
++}
++
 +}
 diff --git a/components/user_scripts/common/url_pattern.h b/components/user_scripts/common/url_pattern.h
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/url_pattern.h
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,306 @@
 +// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -5603,11 +5611,12 @@ new file mode 100755
 +#include <string>
 +#include <vector>
 +
-+#include "base/strings/string_piece.h"
 +#include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 +#include "third_party/abseil-cpp/absl/types/optional.h"
 +
 +class GURL;
++
++namespace user_scripts {
 +
 +// A pattern that can be used to match URLs. A URLPattern is a very restricted
 +// subset of URL syntax:
@@ -5685,7 +5694,7 @@ new file mode 100755
 +  static const char kAllUrlsPattern[];
 +
 +  // Returns true if the given |scheme| is considered valid for extensions.
-+  static bool IsValidSchemeForExtensions(base::StringPiece scheme);
++  static bool IsValidSchemeForExtensions(std::string_view scheme);
 +
 +  // Returns the mask for all schemes considered valid for extensions.
 +  static int GetValidSchemeMaskForExtensions();
@@ -5694,7 +5703,7 @@ new file mode 100755
 +
 +  // Convenience to construct a URLPattern from a string. If the string is not
 +  // known ahead of time, use Parse() instead, which returns success or failure.
-+  URLPattern(int valid_schemes, base::StringPiece pattern);
++  URLPattern(int valid_schemes, std::string_view pattern);
 +
 +  URLPattern();
 +  URLPattern(const URLPattern& other);
@@ -5712,7 +5721,7 @@ new file mode 100755
 +  // URLPattern::ParseResult::kSuccess on success, or an error code otherwise.
 +  // On failure, this instance will have some intermediate values and is in an
 +  // invalid state.
-+  ParseResult Parse(base::StringPiece pattern_str);
++  ParseResult Parse(std::string_view pattern_str);
 +
 +  // Gets the bitmask of valid schemes.
 +  int valid_schemes() const { return valid_schemes_; }
@@ -5721,7 +5730,7 @@ new file mode 100755
 +  // Gets the host the pattern matches. This can be an empty string if the
 +  // pattern matches all hosts (the input was <scheme>://*/<whatever>).
 +  const std::string& host() const { return host_; }
-+  void SetHost(base::StringPiece host);
++  void SetHost(std::string_view host);
 +
 +  // Gets whether to match subdomains of host().
 +  bool match_subdomains() const { return match_subdomains_; }
@@ -5730,7 +5739,7 @@ new file mode 100755
 +  // Gets the path the pattern matches with the leading slash. This can have
 +  // embedded asterisks which are interpreted using glob rules.
 +  const std::string& path() const { return path_; }
-+  void SetPath(base::StringPiece path);
++  void SetPath(std::string_view path);
 +
 +  // Returns true if this pattern matches all (valid) urls.
 +  bool match_all_urls() const { return match_all_urls_; }
@@ -5739,14 +5748,14 @@ new file mode 100755
 +  // Sets the scheme for pattern matches. This can be a single '*' if the
 +  // pattern matches all valid schemes (as defined by the valid_schemes_
 +  // property). Returns false on failure (if the scheme is not valid).
-+  bool SetScheme(base::StringPiece scheme);
++  bool SetScheme(std::string_view scheme);
 +  // Note: You should use MatchesScheme() instead of this getter unless you
 +  // absolutely need the exact scheme. This is exposed for testing.
 +  const std::string& scheme() const { return scheme_; }
 +
 +  // Returns true if the specified scheme can be used in this URL pattern, and
 +  // false otherwise. Uses valid_schemes_ to determine validity.
-+  bool IsValidScheme(base::StringPiece scheme) const;
++  bool IsValidScheme(std::string_view scheme) const;
 +
 +  // Returns true if this instance matches the specified URL. Always returns
 +  // false for invalid URLs.
@@ -5759,14 +5768,14 @@ new file mode 100755
 +  // Note that if test is "filesystem", this may fail whereas MatchesURL
 +  // may succeed.  MatchesURL is smart enough to look at the inner_url instead
 +  // of the outer "filesystem:" part.
-+  bool MatchesScheme(base::StringPiece test) const;
++  bool MatchesScheme(std::string_view test) const;
 +
 +  // Returns true if |test| matches our host.
-+  bool MatchesHost(base::StringPiece test) const;
++  bool MatchesHost(std::string_view test) const;
 +  bool MatchesHost(const GURL& test) const;
 +
 +  // Returns true if |test| matches our path.
-+  bool MatchesPath(base::StringPiece test) const;
++  bool MatchesPath(std::string_view test) const;
 +
 +  // Returns true if the pattern matches all patterns in an (e)TLD. This
 +  // includes patterns like *://*.com/*, *://*.co.uk/*, etc. A pattern that
@@ -5789,7 +5798,7 @@ new file mode 100755
 +  bool MatchesSingleOrigin() const;
 +
 +  // Sets the port. Returns false if the port is invalid.
-+  bool SetPort(base::StringPiece port);
++  bool SetPort(std::string_view port);
 +  const std::string& port() const { return port_; }
 +
 +  // Returns a string representing this instance.
@@ -5816,7 +5825,7 @@ new file mode 100755
 +  //   contains another, it will be handled correctly, but this method does not
 +  //   deal with cases like /*a* and /*b* (where technically the intersection
 +  //   is /*a*b*|/*b*a*); the intersection returned for that case will be empty.
-+  absl::optional<URLPattern> CreateIntersection(const URLPattern& other) const;
++  std::optional<URLPattern> CreateIntersection(const URLPattern& other) const;
 +
 +  // Converts this URLPattern into an equivalent set of URLPatterns that don't
 +  // use a wildcard in the scheme component. If this URLPattern doesn't use a
@@ -5851,7 +5860,7 @@ new file mode 100755
 +  bool MatchesSecurityOriginHelper(const GURL& test) const;
 +
 +  // Returns true if our port matches the |port| pattern (it may be "*").
-+  bool MatchesPortPattern(base::StringPiece port) const;
++  bool MatchesPortPattern(std::string_view port) const;
 +
 +  // If the URLPattern contains a wildcard scheme, returns a list of
 +  // equivalent literal schemes, otherwise returns the current scheme.
@@ -5894,12 +5903,14 @@ new file mode 100755
 +
 +typedef std::vector<URLPattern> URLPatternList;
 +
++}
++
 +#endif  // USERSCRIPTS_COMMON_URL_PATTERN_H_
 diff --git a/components/user_scripts/common/url_pattern_set.cc b/components/user_scripts/common/url_pattern_set.cc
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/url_pattern_set.cc
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,229 @@
 +// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -5912,7 +5923,6 @@ new file mode 100755
 +#include "base/containers/contains.h"
 +#include "base/logging.h"
 +#include "base/stl_util.h"
-+#include "base/values.h"
 +#include "error_utils.h"
 +#include "url_pattern.h"
 +#include "url/gurl.h"
@@ -5927,111 +5937,6 @@ new file mode 100755
 +const char kInvalidURLPatternError[] = "Invalid url pattern '*'";
 +
 +}  // namespace
-+
-+// static
-+URLPatternSet URLPatternSet::CreateDifference(const URLPatternSet& set1,
-+                                              const URLPatternSet& set2) {
-+  return URLPatternSet(base::STLSetDifference<std::set<URLPattern>>(
-+      set1.patterns_, set2.patterns_));
-+}
-+
-+// static
-+URLPatternSet URLPatternSet::CreateIntersection(
-+    const URLPatternSet& set1,
-+    const URLPatternSet& set2,
-+    IntersectionBehavior intersection_behavior) {
-+  // Note: leverage return value optimization; always return the same object.
-+  URLPatternSet result;
-+
-+  if (intersection_behavior == IntersectionBehavior::kStringComparison) {
-+    // String comparison just relies on STL set behavior, which looks at the
-+    // string representation.
-+    result = URLPatternSet(base::STLSetIntersection<std::set<URLPattern>>(
-+        set1.patterns_, set2.patterns_));
-+    return result;
-+  }
-+
-+  // Look for a semantic intersection.
-+
-+  // Step 1: Iterate over each set. Find any patterns that are completely
-+  // contained by the other (thus being necessarily present in any intersection)
-+  // and add them, collecting the others in a set of unique items.
-+  // Note: Use a collection of pointers for the uniques to avoid excessive
-+  // copies. Since these are owned by the URLPatternSet passed in, which is
-+  // const, this should be safe.
-+  std::vector<const URLPattern*> unique_set1;
-+  for (const URLPattern& pattern : set1) {
-+    if (set2.ContainsPattern(pattern))
-+      result.patterns_.insert(pattern);
-+    else
-+      unique_set1.push_back(&pattern);
-+  }
-+  std::vector<const URLPattern*> unique_set2;
-+  for (const URLPattern& pattern : set2) {
-+    if (set1.ContainsPattern(pattern))
-+      result.patterns_.insert(pattern);
-+    else
-+      unique_set2.push_back(&pattern);
-+  }
-+
-+  // If we're just looking for patterns contained by both, we're done.
-+  if (intersection_behavior == IntersectionBehavior::kPatternsContainedByBoth)
-+    return result;
-+
-+  DCHECK_EQ(IntersectionBehavior::kDetailed, intersection_behavior);
-+
-+  // Step 2: Iterate over all the unique patterns and find the intersections
-+  // they have with the other patterns.
-+  for (const auto* pattern : unique_set1) {
-+    for (const auto* pattern2 : unique_set2) {
-+      absl::optional<URLPattern> intersection =
-+          pattern->CreateIntersection(*pattern2);
-+      if (intersection)
-+        result.patterns_.insert(std::move(*intersection));
-+    }
-+  }
-+
-+  return result;
-+}
-+
-+// static
-+URLPatternSet URLPatternSet::CreateUnion(const URLPatternSet& set1,
-+                                         const URLPatternSet& set2) {
-+  return URLPatternSet(
-+      base::STLSetUnion<std::set<URLPattern>>(set1.patterns_, set2.patterns_));
-+}
-+
-+// static
-+URLPatternSet URLPatternSet::CreateUnion(
-+    const std::vector<URLPatternSet>& sets) {
-+  URLPatternSet result;
-+  if (sets.empty())
-+    return result;
-+
-+  // N-way union algorithm is basic O(nlog(n)) merge algorithm.
-+  //
-+  // Do the first merge step into a working set so that we don't mutate any of
-+  // the input.
-+  // TODO(devlin): Looks like this creates a bunch of copies; we can probably
-+  // clean that up.
-+  std::vector<URLPatternSet> working;
-+  for (size_t i = 0; i < sets.size(); i += 2) {
-+    if (i + 1 < sets.size())
-+      working.push_back(CreateUnion(sets[i], sets[i + 1]));
-+    else
-+      working.push_back(sets[i].Clone());
-+  }
-+
-+  for (size_t skip = 1; skip < working.size(); skip *= 2) {
-+    for (size_t i = 0; i < (working.size() - skip); i += skip) {
-+      URLPatternSet u = CreateUnion(working[i], working[i + skip]);
-+      working[i].patterns_.swap(u.patterns_);
-+    }
-+  }
-+
-+  result.patterns_.swap(working[0].patterns_);
-+  return result;
-+}
 +
 +URLPatternSet::URLPatternSet() = default;
 +
@@ -6239,7 +6144,7 @@ diff --git a/components/user_scripts/common/url_pattern_set.h b/components/user_
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/url_pattern_set.h
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,103 @@
 +// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -6250,7 +6155,6 @@ new file mode 100755
 +#include <stddef.h>
 +
 +#include <iosfwd>
-+#include <memory>
 +#include <set>
 +
 +#include "base/values.h"
@@ -6267,64 +6171,8 @@ new file mode 100755
 +// Represents the set of URLs an extension uses for web content.
 +class URLPatternSet {
 + public:
-+  URLPatternSet(const URLPatternSet&) = delete;
-+  URLPatternSet& operator=(const URLPatternSet&) = delete;
-+  typedef std::set<URLPattern>::const_iterator const_iterator;
-+  typedef std::set<URLPattern>::iterator iterator;
-+
-+  // Returns |set1| - |set2|.
-+  static URLPatternSet CreateDifference(const URLPatternSet& set1,
-+                                        const URLPatternSet& set2);
-+
-+  enum class IntersectionBehavior {
-+    // For the following descriptions, consider the two URLPatternSets:
-+    // Set 1: {"https://example.com/*", "https://*.google.com/*", "http://*/*"}
-+    // Set 2: {"https://example.com/*", "https://google.com/maps",
-+    //         "*://chromium.org/*"}
-+
-+    // Only includes patterns that are exactly in both sets. The intersection of
-+    // the two sets above is {"https://example.com/*"}, since that is the only
-+    // pattern that appears exactly in each.
-+    kStringComparison,
-+
-+    // Includes patterns that are effectively contained by both sets. The
-+    // intersection of the two sets above is
-+    // {
-+    //   "https://example.com/*" (contained exactly by each set)
-+    //   "https://google.com/maps" (contained exactly by set 2 and a strict
-+    //                              subset of https://*.google.com/* in set 1)
-+    // }
-+    kPatternsContainedByBoth,
-+
-+    // Includes patterns that are contained by both sets and creates new
-+    // patterns to represent the intersection of any others. The intersection of
-+    // the two sets above is
-+    // {
-+    //   "https://example.com/*" (contained exactly by each set)
-+    //   "https://google.com/maps" (contained exactly by set 2 and a strict
-+    //                              subset of https://*.google.com/* in set 1)
-+    //   "http://chromium.org/*" (the overlap between "http://*/*" in set 1 and
-+    //                            *://chromium.org/*" in set 2).
-+    // }
-+    // Note that this is the most computationally expensive - potentially
-+    // O(n^2) - since it can require comparing each pattern in one set to every
-+    // pattern in the other set.
-+    kDetailed,
-+  };
-+
-+  // Returns the intersection of |set1| and |set2| according to
-+  // |intersection_behavior|.
-+  static URLPatternSet CreateIntersection(
-+      const URLPatternSet& set1,
-+      const URLPatternSet& set2,
-+      IntersectionBehavior intersection_behavior);
-+
-+  // Returns the union of |set1| and |set2|.
-+  static URLPatternSet CreateUnion(const URLPatternSet& set1,
-+                                   const URLPatternSet& set2);
-+
-+  // Returns the union of all sets in |sets|.
-+  static URLPatternSet CreateUnion(const std::vector<URLPatternSet>& sets);
++  using const_iterator = std::set<URLPattern>::const_iterator;
++  using iterator = std::set<URLPattern>::iterator;
 +
 +  URLPatternSet();
 +  URLPatternSet(URLPatternSet&& rhs);
@@ -6738,7 +6586,7 @@ diff --git a/components/user_scripts/common/user_script.h b/components/user_scri
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/user_script.h
-@@ -0,0 +1,403 @@
+@@ -0,0 +1,402 @@
 +// Copyright 2013 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -6751,7 +6599,6 @@ new file mode 100755
 +#include <vector>
 +
 +#include "base/files/file_path.h"
-+#include "base/strings/string_piece.h"
 +#include "script_constants.h"
 +#include "host_id.h"
 +#include "url_pattern.h"
@@ -6836,16 +6683,16 @@ new file mode 100755
 +
 +    // If external_content_ is set returns it as content otherwise it returns
 +    // content_
-+    const base::StringPiece GetContent() const {
++    const std::string_view GetContent() const {
 +      if (external_content_.data())
 +        return external_content_;
 +      else
 +        return content_;
 +    }
-+    void set_external_content(const base::StringPiece& content) {
++    void set_external_content(const std::string_view& content) {
 +      external_content_ = content;
 +    }
-+    void set_content(const base::StringPiece& content) {
++    void set_content(const std::string_view& content) {
 +      content_.assign(content.begin(), content.end());
 +    }
 +
@@ -6870,7 +6717,7 @@ new file mode 100755
 +
 +    // The script content. It can be set to either loaded_content_ or
 +    // externally allocated string.
-+    base::StringPiece external_content_;
++    std::string_view external_content_;
 +
 +    // Set when the content is loaded by LoadContent
 +    std::string content_;
@@ -7224,14 +7071,12 @@ diff --git a/components/user_scripts/common/view_type.cc b/components/user_scrip
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/common/view_type.cc
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,37 @@
 +// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
 +
 +#include "view_type.h"
-+
-+#include "base/strings/string_piece.h"
 +
 +namespace user_scripts {
 +
@@ -7244,7 +7089,7 @@ new file mode 100755
 +  // Why? Is it just because we don't expose those types to JS?
 +  static const struct {
 +    ViewType type;
-+    base::StringPiece name;
++    std::string_view name;
 +  } constexpr kTypeMap[] = {
 +      // {VIEW_TYPE_APP_WINDOW, "APP_WINDOW"},
 +      // {VIEW_TYPE_EXTENSION_BACKGROUND_PAGE, "BACKGROUND"},
@@ -7586,18 +7431,22 @@ diff --git a/components/user_scripts/renderer/injection_host.cc b/components/use
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/renderer/injection_host.cc
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,16 @@
 +// Copyright 2015 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
 +
 +#include "injection_host.h"
 +
++namespace user_scripts {
++
 +InjectionHost::InjectionHost(const HostID& host_id) :
 +    id_(host_id) {
 +}
 +
 +InjectionHost::~InjectionHost() {
++}
++
 +}
 diff --git a/components/user_scripts/renderer/injection_host.h b/components/user_scripts/renderer/injection_host.h
 new file mode 100755
@@ -7614,9 +7463,7 @@ new file mode 100755
 +#include "../common/host_id.h"
 +#include "url/gurl.h"
 +
-+namespace content {
-+class RenderFrame;
-+}
++namespace user_scripts {
 +
 +// An interface for all kinds of hosts who own user scripts.
 +class InjectionHost {
@@ -7643,6 +7490,8 @@ new file mode 100755
 +  // The ID of the host.
 +  HostID id_;
 +};
++
++}
 +
 +#endif  // USERSCRIPTS_RENDERER_INJECTION_HOST_H_
 diff --git a/components/user_scripts/renderer/resources/greasemonkey_api.js b/components/user_scripts/renderer/resources/greasemonkey_api.js
@@ -7738,7 +7587,7 @@ new file mode 100755
 +++ b/components/user_scripts/renderer/resources/user_scripts_renderer_resources.grd
 @@ -0,0 +1,14 @@
 +<?xml version="1.0" encoding="UTF-8"?>
-+<grit latest_public_release="0" current_release="1" output_all_resource_defines="false">
++<grit latest_public_release="0" current_release="1">
 +  <outputs>
 +    <output filename="grit/user_scripts_renderer_resources.h" type="rc_header">
 +      <emit emit_type='prepend'></emit>
@@ -8120,7 +7969,7 @@ new file mode 100755
 +  }
 +  void OnDestruct() override { injection_->invalidate_render_frame(); }
 +
-+  ScriptInjection* injection_;
++  raw_ptr<ScriptInjection> injection_;
 +};
 +
 +// static
@@ -8280,7 +8129,7 @@ new file mode 100755
 +  }
 +
 +void ScriptInjection::OnJsInjectionCompleted(
-+    absl::optional<base::Value> results,
++    std::optional<base::Value> results,
 +    base::TimeTicks start_time) {
 +  DCHECK(!did_inject_js_);
 +
@@ -8304,13 +8153,13 @@ new file mode 100755
 +      run_location_, injected_stylesheets, num_injected_stylesheets);
 +  blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
 +  // Default CSS origin is "author", but can be overridden to "user" by scripts.
-+  absl::optional<CSSOrigin> css_origin = injector_->GetCssOrigin();
++  std::optional<CSSOrigin> css_origin = injector_->GetCssOrigin();
 +  blink::WebCssOrigin blink_css_origin =
 +      css_origin && *css_origin == CSS_ORIGIN_USER
 +          ? blink::WebCssOrigin::kUser
 +          : blink::WebCssOrigin::kAuthor;
 +  blink::WebStyleSheetKey style_sheet_key;
-+  if (const absl::optional<std::string>& injection_key =
++  if (const std::optional<std::string>& injection_key =
 +          injector_->GetInjectionKey())
 +    style_sheet_key = blink::WebString::FromASCII(*injection_key);
 +  for (const blink::WebString& css : css_sources)
@@ -8414,7 +8263,7 @@ new file mode 100755
 +
 +  // Called when JS injection for the given frame has been completed or
 +  // cancelled.
-+  void OnJsInjectionCompleted(absl::optional<base::Value> results,
++  void OnJsInjectionCompleted(std::optional<base::Value> results,
 +                              base::TimeTicks start_time);
 +
 + private:
@@ -8442,7 +8291,7 @@ new file mode 100755
 +  std::unique_ptr<ScriptInjector> injector_;
 +
 +  // The RenderFrame into which this should inject the script.
-+  content::RenderFrame* render_frame_;
++  raw_ptr<content::RenderFrame> render_frame_;
 +
 +  // The associated injection host.
 +  std::unique_ptr<const InjectionHost> injection_host_;
@@ -8465,7 +8314,7 @@ new file mode 100755
 +  bool log_activity_;
 +
 +  // Results storage.
-+  absl::optional<base::Value> execution_result_;
++  std::optional<base::Value> execution_result_;
 +
 +  // The callback to run upon completing asynchronously.
 +  CompletionCallback async_completion_callback_;
@@ -8483,7 +8332,7 @@ diff --git a/components/user_scripts/renderer/script_injection_manager.cc b/comp
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/renderer/script_injection_manager.cc
-@@ -0,0 +1,415 @@
+@@ -0,0 +1,414 @@
 +// Copyright 2014 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -8539,7 +8388,6 @@ new file mode 100755
 +      break;
 +  }
 +  NOTREACHED();
-+  return UserScript::RUN_LOCATION_LAST;
 +}
 +
 +}  // namespace
@@ -8574,7 +8422,7 @@ new file mode 100755
 +  void InvalidateAndResetFrame(bool force_reset);
 +
 +  // The owning ScriptInjectionManager.
-+  ScriptInjectionManager* manager_;
++  raw_ptr<ScriptInjectionManager> manager_;
 +
 +  bool should_run_idle_ = true; // commit @9f2aac4
 +
@@ -8987,7 +8835,7 @@ new file mode 100755
 +  std::vector<std::unique_ptr<RFOHelper>> rfo_helpers_;
 +
 +  // The set of UserScripts associated with extensions. Owned by the Dispatcher.
-+  UserScriptSetManager* user_script_set_manager_;
++  raw_ptr<UserScriptSetManager> user_script_set_manager_;
 +
 +  // Pending injections which are waiting for either the proper run location or
 +  // user consent.
@@ -9008,7 +8856,7 @@ diff --git a/components/user_scripts/renderer/script_injector.h b/components/use
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/renderer/script_injector.h
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,100 @@
 +// Copyright 2014 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -9027,6 +8875,10 @@ new file mode 100755
 +
 +namespace blink {
 +class WebLocalFrame;
++}
++
++namespace content {
++class RenderFrame;
 +}
 +
 +namespace user_scripts {
@@ -9053,10 +8905,10 @@ new file mode 100755
 +  virtual bool IsUserGesture() const = 0;
 +
 +  // Returns the CSS origin of this injection.
-+  virtual absl::optional<CSSOrigin> GetCssOrigin() const = 0;
++  virtual std::optional<CSSOrigin> GetCssOrigin() const = 0;
 +
 +  // Returns the key for this injection, if it's a CSS injection.
-+  virtual const absl::optional<std::string> GetInjectionKey() const = 0;
++  virtual const std::optional<std::string> GetInjectionKey() const = 0;
 +
 +  // Returns true if the script expects results.
 +  virtual bool ExpectsResults() const = 0;
@@ -9091,7 +8943,7 @@ new file mode 100755
 +  // |render_frame| contains the render frame, or null if the frame was
 +  // invalidated.
 +  virtual void OnInjectionComplete(
-+      absl::optional<base::Value> execution_result,
++      std::optional<base::Value> execution_result,
 +      UserScript::RunLocation run_location,
 +      content::RenderFrame* render_frame) = 0;
 +
@@ -9356,12 +9208,12 @@ new file mode 100755
 +  return false;
 +}
 +
-+absl::optional<CSSOrigin> UserScriptInjector::GetCssOrigin() const {
-+  return absl::nullopt;
++std::optional<CSSOrigin> UserScriptInjector::GetCssOrigin() const {
++  return std::nullopt;
 +}
 +
-+const absl::optional<std::string> UserScriptInjector::GetInjectionKey() const {
-+  return absl::nullopt;
++const std::optional<std::string> UserScriptInjector::GetInjectionKey() const {
++  return std::nullopt;
 +}
 +
 +bool UserScriptInjector::ShouldInjectJs(
@@ -9438,7 +9290,7 @@ new file mode 100755
 +}
 +
 +void UserScriptInjector::OnInjectionComplete(
-+    absl::optional<base::Value> execution_result,
++    std::optional<base::Value> execution_result,
 +    UserScript::RunLocation run_location,
 +    content::RenderFrame* render_frame) {}
 +
@@ -9494,8 +9346,8 @@ new file mode 100755
 +  // ScriptInjector implementation.
 +  UserScript::InjectionType script_type() const override;
 +  bool IsUserGesture() const override;
-+  absl::optional<CSSOrigin> GetCssOrigin() const override;
-+  const absl::optional<std::string> GetInjectionKey() const override;
++  std::optional<CSSOrigin> GetCssOrigin() const override;
++  const std::optional<std::string> GetInjectionKey() const override;
 +  bool ExpectsResults() const override;
 +  bool ShouldInjectJs(
 +      UserScript::RunLocation run_location,
@@ -9511,7 +9363,7 @@ new file mode 100755
 +      UserScript::RunLocation run_location,
 +      std::set<std::string>* injected_stylesheets,
 +      size_t* num_injected_stylesheets) const override;
-+  void OnInjectionComplete(absl::optional<base::Value> execution_result,
++  void OnInjectionComplete(std::optional<base::Value> execution_result,
 +                           UserScript::RunLocation run_location,
 +                           content::RenderFrame* render_frame) override;
 +  void OnWillNotInject(InjectFailureReason reason,
@@ -9519,12 +9371,12 @@ new file mode 100755
 +
 +  // The associated user script. Owned by the UserScriptInjector that created
 +  // this object.
-+  const UserScript* script_;
++  raw_ptr<const UserScript> script_;
 +
 +  // The UserScriptSet that eventually owns the UserScript this
 +  // UserScriptInjector points to.
 +  // Outlives |this|.
-+  UserScriptSet* const user_script_set_;
++  const raw_ptr<UserScriptSet> user_script_set_;
 +
 +  // The id of the associated user script. We cache this because when we update
 +  // the |script_| associated with this injection, the old referance may be
@@ -9678,14 +9530,14 @@ new file mode 100755
 +      size_t body_length = 0;
 +      CHECK(iter.ReadData(&body, &body_length));
 +      script->js_scripts()[j]->set_external_content(
-+          base::StringPiece(body, body_length));
++          std::string_view(body, body_length));
 +    }
 +    for (size_t j = 0; j < script->css_scripts().size(); ++j) {
 +      const char* body = NULL;
 +      size_t body_length = 0;
 +      CHECK(iter.ReadData(&body, &body_length));
 +      script->css_scripts()[j]->set_external_content(
-+          base::StringPiece(body, body_length));
++          std::string_view(body, body_length));
 +    }
 +
 +    if (only_inject_incognito && !script->is_incognito_enabled())
@@ -9777,7 +9629,7 @@ new file mode 100755
 +    return iter->second;
 +  }
 +
-+  base::StringPiece script_content = file.GetContent();
++  std::string_view script_content = file.GetContent();
 +  blink::WebString source;
 +  if (emulate_greasemonkey) {
 +    // We add this dumb function wrapper for user scripts to emulate what
@@ -9799,7 +9651,7 @@ new file mode 100755
 +  if (iter != script_sources_.end())
 +    return iter->second;
 +
-+  base::StringPiece script_content = file.GetContent();
++  std::string_view script_content = file.GetContent();
 +  return script_sources_
 +      .insert(std::make_pair(
 +          url, blink::WebString::FromUTF8(script_content)))
@@ -9917,7 +9769,7 @@ diff --git a/components/user_scripts/renderer/user_script_set_manager.cc b/compo
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/renderer/user_script_set_manager.cc
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,76 @@
 +#include "user_script_set_manager.h"
 +
 +#include "base/logging.h"
@@ -9972,7 +9824,6 @@ new file mode 100755
 +    base::ReadOnlySharedMemoryRegion shared_memory) {
 +  if (!shared_memory.IsValid()) {
 +    NOTREACHED() << "Bad scripts handle";
-+    return;
 +  }
 +
 +  UserScriptSet* scripts = NULL;
@@ -9995,7 +9846,6 @@ new file mode 100755
 +}
 +
 +}
-\ No newline at end of file
 diff --git a/components/user_scripts/renderer/user_script_set_manager.h b/components/user_scripts/renderer/user_script_set_manager.h
 new file mode 100755
 --- /dev/null
@@ -10328,22 +10178,22 @@ new file mode 100755
 +#include "web_ui_injection_host.h"
 +#include "base/no_destructor.h"
 +
-+namespace {
++namespace user_scripts {
 +
 +// The default secure CSP to be used in order to prevent remote scripts.
 +const char kDefaultSecureCSP[] = "script-src 'self'; object-src 'self';";
 +
 +}
 +
-+WebUIInjectionHost::WebUIInjectionHost(const HostID& host_id)
++user_scripts::WebUIInjectionHost::WebUIInjectionHost(const HostID& host_id)
 +  : InjectionHost(host_id),
 +    url_(host_id.id()) {
 +}
 +
-+WebUIInjectionHost::~WebUIInjectionHost() {
++user_scripts::WebUIInjectionHost::~WebUIInjectionHost() {
 +}
 +
-+const std::string* WebUIInjectionHost::GetContentSecurityPolicy() const {
++const std::string* user_scripts::WebUIInjectionHost::GetContentSecurityPolicy() const {
 +  // Use the main world CSP.
 +  // return nullptr;
 +
@@ -10354,18 +10204,18 @@ new file mode 100755
 +  return default_isolated_world_csp.get();
 +}
 +
-+const GURL& WebUIInjectionHost::url() const {
++const GURL& user_scripts::WebUIInjectionHost::url() const {
 +  return url_;
 +}
 +
-+const std::string& WebUIInjectionHost::name() const {
++const std::string& user_scripts::WebUIInjectionHost::name() const {
 +  return id().id();
 +}
 diff --git a/components/user_scripts/renderer/web_ui_injection_host.h b/components/user_scripts/renderer/web_ui_injection_host.h
 new file mode 100755
 --- /dev/null
 +++ b/components/user_scripts/renderer/web_ui_injection_host.h
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,31 @@
 +// Copyright 2015 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -10375,7 +10225,9 @@ new file mode 100755
 +
 +#include "injection_host.h"
 +
-+class WebUIInjectionHost : public InjectionHost {
++namespace user_scripts {
++
++class WebUIInjectionHost : public user_scripts::InjectionHost {
 + public:
 +  WebUIInjectionHost(const WebUIInjectionHost&) = delete;
 +  WebUIInjectionHost& operator=(const WebUIInjectionHost&) = delete;
@@ -10391,6 +10243,8 @@ new file mode 100755
 + private:
 +  GURL url_;
 +};
++
++}
 +
 +#endif  // USERSCRIPTS_RENDERER_WEB_UI_INJECTION_HOST_H_
 diff --git a/components/user_scripts/strings/userscripts_strings.grdp b/components/user_scripts/strings/userscripts_strings.grdp
@@ -10479,20 +10333,20 @@ diff --git a/ipc/ipc_message_start.h b/ipc/ipc_message_start.h
    PpapiMsgStart,
 +  ExtensionMsgStart,
    NaClHostMsgStart,
-   GinJavaBridgeMsgStart,
    LastIPCMsgStart  // Must come last.
+ };
 diff --git a/tools/gritsettings/resource_ids.spec b/tools/gritsettings/resource_ids.spec
 --- a/tools/gritsettings/resource_ids.spec
 +++ b/tools/gritsettings/resource_ids.spec
-@@ -1015,6 +1015,12 @@
-   "components/search_engine_descriptions_strings.grd": {
-     "messages": [7260],
+@@ -1103,6 +1103,12 @@
+    "META": {"sizes": {"includes": [30],}},
+     "includes": [7480],
    },
 +  "components/user_scripts/renderer/resources/user_scripts_renderer_resources.grd": {
-+    "includes": [7280],
++    "includes": [7500],
 +  },
 +  "components/user_scripts/browser/resources/browser_resources.grd": {
-+    "includes": [7300],
++    "includes": [7620],
 +  },
    # END components/ section.
  

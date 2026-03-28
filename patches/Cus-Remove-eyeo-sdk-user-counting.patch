@@ -1,95 +1,310 @@
 --- a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 +++ b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
-@@ -221,7 +221,6 @@
- #include "chrome/browser/webid/federated_identity_permission_context_factory.h"
+@@ -234,7 +234,6 @@
  #include "chrome/common/buildflags.h"
  #include "chrome/common/chrome_features.h"
+ #include "components/adblock/content/browser/factories/adblock_request_throttle_factory.h"
 -#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
  #include "components/adblock/content/browser/factories/content_security_policy_injector_factory.h"
  #include "components/adblock/content/browser/factories/element_hider_factory.h"
  #include "components/adblock/content/browser/factories/resource_classification_runner_factory.h"
-@@ -831,7 +830,6 @@ void ChromeBrowserMainExtraPartsProfiles::
+@@ -882,7 +881,6 @@ void ChromeBrowserMainExtraPartsProfiles::
    // Makes manual testing possible.
    FakeSmartCardDeviceServiceFactory::GetInstance();
  #endif
 -  adblock::AdblockTelemetryServiceFactory::GetInstance();
+   adblock::AdblockRequestThrottleFactory::GetInstance();
    adblock::ContentSecurityPolicyInjectorFactory::GetInstance();
    adblock::ElementHiderFactory::GetInstance();
-   adblock::ResourceClassificationRunnerFactory::GetInstance();
---- a/chrome/browser/ui/tab_helpers.cc
-+++ b/chrome/browser/ui/tab_helpers.cc
-@@ -119,7 +119,6 @@
- #include "chrome/common/chrome_isolated_world_ids.h"
- #include "chrome/common/chrome_switches.h"
- #include "components/adblock/content/browser/adblock_webcontents_observer.h"
--#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
- #include "components/adblock/content/browser/factories/element_hider_factory.h"
- #include "components/adblock/content/browser/factories/sitekey_storage_factory.h"
- #include "components/adblock/content/browser/factories/subscription_service_factory.h"
-@@ -381,8 +380,6 @@
-   }
-
-   auto* original_profile = profile->GetOriginalProfile();
--  adblock::AdblockTelemetryServiceFactory::GetForBrowserContext(
--      original_profile);
-   AdblockWebContentObserver::CreateForWebContents(
-       web_contents,
-       adblock::SubscriptionServiceFactory::GetForBrowserContext(
+--- a/chrome/browser/profiles/profile_keyed_service_browsertest.cc
++++ b/chrome/browser/profiles/profile_keyed_service_browsertest.cc
+@@ -287,7 +287,6 @@ IN_PROC_BROWSER_TEST_F(ProfileKeyedServiceBrowserTest,
+     "AdblockRequestThrottle",
+     "AdblockSubscriptionPersistentMetadata",
+     "AdblockSubscriptionService",
+-    "AdblockTelemetryService",
+     "ContentSecurityPolicyInjector",
+     "ElementHider",
+     "ResourceClassificationRunner",
+@@ -849,7 +848,6 @@ IN_PROC_BROWSER_TEST_F(ProfileKeyedServiceGuestBrowserTest,
+     "AdblockRequestThrottle",
+     "AdblockSubscriptionPersistentMetadata",
+     "AdblockSubscriptionService",
+-    "AdblockTelemetryService",
+     "ContentSecurityPolicyInjector",
+     "ElementHider",
+     "EyeoDevToolsPrivateAPI",
 --- a/components/adblock/content/browser/BUILD.gn
 +++ b/components/adblock/content/browser/BUILD.gn
-@@ -14,15 +14,8 @@
- # You should have received a copy of the GNU General Public License
- # along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
-
--import("//components/adblock/features.gni")
--
- config("adblock_content_common_config") {
-   defines = []
--
--  if (eyeo_intercept_debug_url) {
--    print("WARNING! Enabled intercepting eyeo debug domain \"test.data\"")
--    defines += [ "EYEO_INTERCEPT_DEBUG_URL=1" ]
--  }
- }
-
- source_set("browser_impl") {
-@@ -52,8 +45,6 @@ source_set("browser_impl") {
-     "element_hider_impl.h",
-     "eyeo_document_info.cc",
-     "eyeo_document_info.h",
+@@ -58,8 +58,6 @@ source_set("browser_impl") {
+     "eyeo_page_info.h",
+     "factories/adblock_request_throttle_factory.cc",
+     "factories/adblock_request_throttle_factory.h",
 -    "factories/adblock_telemetry_service_factory.cc",
 -    "factories/adblock_telemetry_service_factory.h",
      "factories/content_security_policy_injector_factory.cc",
      "factories/content_security_policy_injector_factory.h",
      "factories/element_hider_factory.cc",
-@@ -79,13 +70,6 @@ source_set("browser_impl") {
-     "session_stats_impl.h",
-   ]
-
--  if (eyeo_intercept_debug_url) {
--    sources += [
--      "adblock_url_loader_factory_for_test.cc",
--      "adblock_url_loader_factory_for_test.h",
--    ]
+@@ -214,7 +212,6 @@ source_set("browser_tests") {
+     "test/adblock_sitekey_browsertest.cc",
+     "test/adblock_snippets_browsertest.cc",
+     "test/adblock_subscription_service_browsertest.cc",
+-    "test/adblock_telemetry_service_browsertest.cc",
+     "test/adblock_trusted_events_browsertest.cc",
+     "test/adblock_web_bundle_browsertest.cc",
+     "test/adblock_web_ui_browsertest.cc",
+--- a/components/adblock/content/browser/adblock_internals_page_handler.cc
++++ b/components/adblock/content/browser/adblock_internals_page_handler.cc
+@@ -19,10 +19,8 @@
+ 
+ #include "base/i18n/time_formatting.h"
+ #include "base/strings/utf_string_conversions.h"
+-#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
+ #include "components/adblock/content/browser/factories/session_stats_factory.h"
+ #include "components/adblock/content/browser/factories/subscription_service_factory.h"
+-#include "components/adblock/core/adblock_telemetry_service.h"
+ #include "components/adblock/core/common/adblock_constants.h"
+ #include "components/adblock/core/session_stats.h"
+ #include "components/adblock/core/subscription/subscription_config.h"
+@@ -124,14 +122,6 @@ void AdblockInternalsPageHandler::GetDebugInfo(GetDebugInfoCallback callback) {
+     content += DebugLine("Total blocked", blocked[CustomFiltersUrl()], 3);
+   }
+ 
+-  auto* telemetry_service =
+-      adblock::AdblockTelemetryServiceFactory::GetForBrowserContext(context_);
+-
+-  for (auto& topic_provider_debug_info :
+-       telemetry_service->GetTopicProvidersDebugInfo()) {
+-    content +=
+-        DebugLine("Eyeometry topic provider", topic_provider_debug_info, 0);
+-  }
+   std::move(callback).Run(std::move(content));
+ }
+ 
+deleted file mode 100644
+--- a/components/adblock/content/browser/factories/adblock_telemetry_service_factory.cc
++++ /dev/null
+@@ -1,127 +0,0 @@
+-/*
+- * This file is part of eyeo Chromium SDK,
+- * Copyright (C) 2006-present eyeo GmbH
+- *
+- * eyeo Chromium SDK is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 3 as
+- * published by the Free Software Foundation.
+- *
+- * eyeo Chromium SDK is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-
+-#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
+-
+-#include <memory>
+-
+-#include "base/no_destructor.h"
+-#include "components/adblock/content/browser/factories/adblock_request_throttle_factory.h"
+-#include "components/adblock/content/browser/factories/resource_classification_runner_factory.h"
+-#include "components/adblock/content/browser/factories/subscription_service_factory.h"
+-#include "components/adblock/content/browser/page_view_stats.h"
+-#include "components/adblock/core/activeping_telemetry_topic_provider.h"
+-#include "components/adblock/core/adblock_telemetry_service.h"
+-#include "components/adblock/core/common/adblock_constants.h"
+-#include "components/adblock/core/common/adblock_keyed_service_ptr_holder.h"
+-#include "components/adblock/core/subscription/subscription_service.h"
+-#include "components/user_prefs/user_prefs.h"
+-#include "content/public/browser/browser_context.h"
+-#include "content/public/browser/storage_partition.h"
+-
+-namespace adblock {
+-namespace {
+-
+-std::optional<base::TimeDelta> g_check_interval_for_testing;
+-
+-base::TimeDelta GetCheckInterval() {
+-  static base::TimeDelta kCheckInterval =
+-      g_check_interval_for_testing ? g_check_interval_for_testing.value()
+-                                   : base::Minutes(5);
+-  return kCheckInterval;
+-}
+-
+-}  // namespace
+-
+-// static
+-AdblockTelemetryService* AdblockTelemetryServiceFactory::GetForBrowserContext(
+-    content::BrowserContext* context) {
+-  return static_cast<AdblockTelemetryService*>(
+-      GetInstance()->GetServiceForBrowserContext(context, true));
+-}
+-
+-// static
+-AdblockTelemetryServiceFactory* AdblockTelemetryServiceFactory::GetInstance() {
+-  static base::NoDestructor<AdblockTelemetryServiceFactory> instance;
+-  return instance.get();
+-}
+-
+-AdblockTelemetryServiceFactory::AdblockTelemetryServiceFactory()
+-    : BrowserContextKeyedServiceFactory(
+-          "AdblockTelemetryService",
+-          BrowserContextDependencyManager::GetInstance()) {
+-  DependsOn(ResourceClassificationRunnerFactory::GetInstance());
+-  DependsOn(SubscriptionServiceFactory::GetInstance());
+-  DependsOn(AdblockRequestThrottleFactory::GetInstance());
+-}
+-
+-AdblockTelemetryServiceFactory::~AdblockTelemetryServiceFactory() = default;
+-
+-content::BrowserContext* AdblockTelemetryServiceFactory::GetBrowserContextToUse(
+-    content::BrowserContext* context) const {
+-  if (context->IsOffTheRecord()) {
+-    return nullptr;
+-  }
+-  return context;
+-}
+-
+-std::unique_ptr<KeyedService>
+-AdblockTelemetryServiceFactory::BuildServiceInstanceForBrowserContext(
+-    content::BrowserContext* context) const {
+-  // Need to use a URLLoaderFactory specific to the browser context, not from
+-  // system_network_context_manager(), because the required Accept-Language
+-  // header depends on user's language settings and is not present in requests
+-  // made from the System network context.
+-  scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
+-      context->GetDefaultStoragePartition()
+-          ->GetURLLoaderFactoryForBrowserProcess();
+-  auto* subscription_service =
+-      SubscriptionServiceFactory::GetForBrowserContext(context);
+-  auto telemetry_service = std::make_unique<AdblockTelemetryService>(
+-      subscription_service, url_loader_factory,
+-      AdblockRequestThrottleFactory::GetForBrowserContext(context),
+-      GetCheckInterval());
+-  auto* pref_service = user_prefs::UserPrefs::Get(context);
+-  telemetry_service->AddTopicProvider(
+-      std::make_unique<ActivepingTelemetryTopicProvider>(
+-          pref_service, subscription_service,
+-          ActivepingTelemetryTopicProvider::DefaultBaseUrl(),
+-          ActivepingTelemetryTopicProvider::DefaultAuthToken(),
+-          std::make_unique<PageViewStats>(
+-              ResourceClassificationRunnerFactory::GetForBrowserContext(
+-                  context),
+-              pref_service)));
+-
+-  if (url_loader_factory) {
+-    telemetry_service->Start();
 -  }
 -
-   deps = [
-     "//base",
-     "//components/adblock/content/browser/mojom:adblock_internals",
+-  KeyedServicePtrHolder<AdblockTelemetryService>::Set(
+-      context, kAdblockTelemetryServiceUserDataKey, telemetry_service.get());
+-  return std::move(telemetry_service);
+-}
+-
+-bool AdblockTelemetryServiceFactory::ServiceIsNULLWhileTesting() const {
+-  return true;
+-}
+-
+-void AdblockTelemetryServiceFactory::SetCheckIntervalForTesting(
+-    base::TimeDelta check_interval) {
+-  g_check_interval_for_testing = check_interval;
+-}
+-
+-}  // namespace adblock
+deleted file mode 100644
+--- a/components/adblock/content/browser/factories/adblock_telemetry_service_factory.h
++++ /dev/null
+@@ -1,55 +0,0 @@
+-/*
+- * This file is part of eyeo Chromium SDK,
+- * Copyright (C) 2006-present eyeo GmbH
+- *
+- * eyeo Chromium SDK is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 3 as
+- * published by the Free Software Foundation.
+- *
+- * eyeo Chromium SDK is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-
+-#ifndef COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
+-#define COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
+-
+-#include "base/time/time.h"
+-#include "components/adblock/core/adblock_telemetry_service.h"
+-#include "components/keyed_service/content/browser_context_dependency_manager.h"
+-#include "components/keyed_service/content/browser_context_keyed_service_factory.h"
+-#include "components/prefs/pref_service.h"
+-
+-namespace adblock {
+-class SubscriptionService;
+-class AdblockTelemetryServiceFactory
+-    : public BrowserContextKeyedServiceFactory {
+- public:
+-  static AdblockTelemetryService* GetForBrowserContext(
+-      content::BrowserContext* context);
+-  static AdblockTelemetryServiceFactory* GetInstance();
+-
+-  // Sets the check interval, required for browser tests.
+-  // Must be called before BuildServiceInstanceFor().
+-  void SetCheckIntervalForTesting(base::TimeDelta check_interval);
+-
+- private:
+-  friend class base::NoDestructor<AdblockTelemetryServiceFactory>;
+-  AdblockTelemetryServiceFactory();
+-  ~AdblockTelemetryServiceFactory() override;
+-
+-  // BrowserContextKeyedServiceFactory:
+-  std::unique_ptr<KeyedService> BuildServiceInstanceForBrowserContext(
+-      content::BrowserContext* context) const override;
+-  bool ServiceIsNULLWhileTesting() const override;
+-  content::BrowserContext* GetBrowserContextToUse(
+-      content::BrowserContext* context) const override;
+-};
+-
+-}  // namespace adblock
+-
+-#endif  // COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
+--- a/components/adblock/content/browser/factories/embedding_utils.cc
++++ b/components/adblock/content/browser/factories/embedding_utils.cc
+@@ -20,7 +20,6 @@
+ #include <memory>
+ 
+ #include "components/adblock/content/browser/adblock_webcontents_observer.h"
+-#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
+ #include "components/adblock/content/browser/factories/content_security_policy_injector_factory.h"
+ #include "components/adblock/content/browser/factories/element_hider_factory.h"
+ #include "components/adblock/content/browser/factories/resource_classification_runner_factory.h"
+@@ -34,7 +33,6 @@ namespace adblock {
+ 
+ void EnsureBackgroundServicesStarted(content::BrowserContext* browser_context) {
+   ResourceClassificationRunnerFactory::GetForBrowserContext(browser_context);
+-  AdblockTelemetryServiceFactory::GetForBrowserContext(browser_context);
+   SessionStatsFactory::GetForBrowserContext(browser_context);
+   SitekeyStorageFactory::GetForBrowserContext(browser_context);
+ }
+--- a/components/adblock/content/browser/page_view_stats.h
++++ b/components/adblock/content/browser/page_view_stats.h
+@@ -23,7 +23,6 @@
+ #include "base/memory/weak_ptr.h"
+ #include "base/sequence_checker.h"
+ #include "components/adblock/content/browser/resource_classification_runner.h"
+-#include "components/adblock/core/activeping_telemetry_topic_provider.h"
+ #include "components/prefs/pref_service.h"
+ #include "content/public/browser/browser_context.h"
+ #include "content/public/browser/page.h"
 --- a/components/adblock/core/BUILD.gn
 +++ b/components/adblock/core/BUILD.gn
-@@ -14,7 +14,6 @@
- # You should have received a copy of the GNU General Public License
- # along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
-
--import("//components/adblock/features.gni")
- import("//third_party/flatbuffers/flatbuffer.gni")
-
- flatbuffer("schema") {
-@@ -49,45 +48,11 @@ source_set("schema_hash") {
+@@ -49,43 +49,9 @@ source_set("schema_hash") {
    deps = [ ":generate_schema_hash" ]
  }
-
+ 
 -config("eyeo_telemetry_config") {
 -  defines = []
 -
@@ -125,23 +340,20 @@
    sources = [
 -    "activeping_telemetry_topic_provider.cc",
 -    "activeping_telemetry_topic_provider.h",
-     "adblock_switches.cc",
-     "adblock_switches.h",
 -    "adblock_telemetry_service.cc",
 -    "adblock_telemetry_service.h",
      "features.cc",
      "features.h",
      "sitekey_storage.h",
-@@ -111,8 +76,6 @@ source_set("core") {
-     "//components/prefs",
+@@ -110,7 +76,6 @@ source_set("core") {
      "//components/version_info",
    ]
--
+ 
 -  configs += [ ":eyeo_telemetry_config" ]
  }
-
+ 
  source_set("test_support") {
-@@ -133,8 +96,6 @@ source_set("test_support") {
+@@ -131,8 +96,6 @@ source_set("test_support") {
  source_set("unit_tests") {
    testonly = true
    sources = [
@@ -150,14 +362,13 @@
      "test/bundled_subscription_test.cc",
      "test/sitekey_storage_impl_test.cc",
    ]
-@@ -152,7 +113,5 @@ source_set("unit_tests") {
-     "//services/network:test_support",
+@@ -152,5 +115,4 @@ source_set("unit_tests") {
      "//testing/gtest",
    ]
--
+ 
 -  configs += [ ":eyeo_telemetry_config" ]
  }
-
+deleted file mode 100644
 --- a/components/adblock/core/activeping_telemetry_topic_provider.cc
 +++ /dev/null
 @@ -1,294 +0,0 @@
@@ -190,22 +401,21 @@
 -#include "base/uuid.h"
 -#include "components/adblock/core/common/adblock_constants.h"
 -#include "components/adblock/core/common/adblock_prefs.h"
+-#include "components/adblock/core/common/app_info.h"
 -#include "components/adblock/core/subscription/subscription_config.h"
 -
 -namespace adblock {
 -namespace {
--int g_http_port_for_testing = 0;
+-int g_https_port_for_testing = 0;
 -std::optional<base::TimeDelta> g_time_delta_for_testing;
 -
 -GURL GetUrl() {
 -  GURL url(EYEO_TELEMETRY_SERVER_URL);
--  if (!g_http_port_for_testing) {
+-  if (!g_https_port_for_testing) {
 -    return url;
 -  }
--  DCHECK_EQ(url::kHttpsScheme, url.scheme());
 -  GURL::Replacements replacements;
--  replacements.SetSchemeStr(url::kHttpScheme);
--  const std::string port_str = base::NumberToString(g_http_port_for_testing);
+-  const std::string port_str = base::NumberToString(g_https_port_for_testing);
 -  replacements.SetPortStr(port_str);
 -  return url.ReplaceComponents(replacements);
 -}
@@ -243,16 +453,16 @@
 -}  // namespace
 -
 -ActivepingTelemetryTopicProvider::ActivepingTelemetryTopicProvider(
--    utils::AppInfo app_info,
 -    PrefService* pref_service,
 -    SubscriptionService* subscription_service,
 -    const GURL& base_url,
--    const std::string& auth_token)
--    : app_info_(std::move(app_info)),
--      pref_service_(pref_service),
+-    const std::string& auth_token,
+-    std::unique_ptr<StatsPayloadProvider> stats_payload_provider)
+-    : pref_service_(pref_service),
 -      subscription_service_(subscription_service),
 -      base_url_(base_url),
--      auth_token_(auth_token) {}
+-      auth_token_(auth_token),
+-      stats_payload_provider_(std::move(stats_payload_provider)) {}
 -
 -ActivepingTelemetryTopicProvider::~ActivepingTelemetryTopicProvider() = default;
 -
@@ -284,7 +494,7 @@
 -}
 -
 -GURL ActivepingTelemetryTopicProvider::GetEndpointURL() const {
--  return base_url_.Resolve("/topic/eyeochromium_activeping/version/1");
+-  return base_url_.Resolve("/topic/eyeochromium_activeping/version/2");
 -}
 -
 -std::string ActivepingTelemetryTopicProvider::GetAuthToken() const {
@@ -355,8 +565,7 @@
 -  UpdatePrefs(*ping_response_time);
 -}
 -
--void ActivepingTelemetryTopicProvider::FetchDebugInfo(
--    DebugInfoCallback callback) const {
+-std::string ActivepingTelemetryTopicProvider::FetchDebugInfo() const {
 -  base::Value::Dict debug_info;
 -  debug_info.Set("endpoint_url", GetEndpointURL().spec());
 -  debug_info.Set("payload", GetPayloadInternal());
@@ -372,18 +581,17 @@
 -                 pref_service_->GetString(
 -                     adblock::common::prefs::kTelemetryPreviousLastPingTime));
 -
--  std::string serialized;
--  // The only way JSONWriter::Write() can return fail is then the Value
--  // contains lists or dicts that are too deep (200 levels). We just built the
--  // payload and root objects here, they should be really shallow.
--  CHECK(base::JSONWriter::WriteWithOptions(
--      debug_info, base::JsonOptions::OPTIONS_PRETTY_PRINT, &serialized));
--  std::move(callback).Run(std::move(serialized));
+-  return base::WriteJsonWithOptions(debug_info,
+-                                    base::JSONWriter::OPTIONS_PRETTY_PRINT)
+-      .value_or(std::string());
 -}
 -
 -void ActivepingTelemetryTopicProvider::ScheduleNextPing(base::TimeDelta delay) {
 -  pref_service_->SetTime(common::prefs::kTelemetryNextPingTime,
 -                         base::Time::Now() + delay);
+-  if (stats_payload_provider_ && delay == GetNormalPingInterval()) {
+-    stats_payload_provider_->ResetStats();
+-  }
 -}
 -
 -void ActivepingTelemetryTopicProvider::UpdatePrefs(
@@ -414,17 +622,20 @@
 -      subscription_service_->GetFilteringConfiguration(
 -          kAdblockFilteringConfigurationName);
 -  if (adblock_configuration) {
--    aa_enabled = base::ranges::any_of(
+-    aa_enabled = std::ranges::any_of(
 -        adblock_configuration->GetFilterLists(),
 -        [&](const auto& url) { return url == AcceptableAdsUrl(); });
 -  }
 -  payload.Set("addon_name", "eyeo-chromium-sdk");
 -  payload.Set("addon_version", "2.0.0");
--  payload.Set("application", app_info_.name);
--  payload.Set("application_version", app_info_.version);
+-  payload.Set("application", AppInfo::Get().name);
+-  payload.Set("application_version", AppInfo::Get().version);
 -  payload.Set("aa_active", aa_enabled);
 -  payload.Set("platform", base::SysInfo::OperatingSystemName());
 -  payload.Set("platform_version", base::SysInfo::OperatingSystemVersion());
+-  if (stats_payload_provider_) {
+-    payload.Merge(stats_payload_provider_->GetPayload());
+-  }
 -  // Server requires the following parameters to either have a correct,
 -  // non-empty value, or not be present at all. We shall not send empty strings.
 -  AppendStringIfPresent(pref_service_, common::prefs::kTelemetryLastPingTag,
@@ -443,9 +654,9 @@
 -}
 -
 -// static
--void ActivepingTelemetryTopicProvider::SetHttpPortForTesting(
--    int http_port_for_testing) {
--  g_http_port_for_testing = http_port_for_testing;
+-void ActivepingTelemetryTopicProvider::SetHttpsPortForTesting(
+-    int https_port_for_testing) {
+-  g_https_port_for_testing = https_port_for_testing;
 -}
 -
 -// static
@@ -455,9 +666,10 @@
 -}
 -
 -}  // namespace adblock
+deleted file mode 100644
 --- a/components/adblock/core/activeping_telemetry_topic_provider.h
 +++ /dev/null
-@@ -1,87 +0,0 @@
+@@ -1,94 +0,0 @@
 -/*
 - * This file is part of eyeo Chromium SDK,
 - * Copyright (C) 2006-present eyeo GmbH
@@ -481,7 +693,6 @@
 -#include "base/memory/raw_ptr.h"
 -#include "base/time/time.h"
 -#include "components/adblock/core/adblock_telemetry_service.h"
--#include "components/adblock/core/common/adblock_utils.h"
 -#include "components/adblock/core/subscription/subscription_service.h"
 -#include "components/prefs/pref_service.h"
 -
@@ -499,11 +710,19 @@
 -class ActivepingTelemetryTopicProvider final
 -    : public AdblockTelemetryService::TopicProvider {
 - public:
--  ActivepingTelemetryTopicProvider(utils::AppInfo app_info,
--                                   PrefService* pref_service,
--                                   SubscriptionService* subscription_service,
--                                   const GURL& base_url,
--                                   const std::string& auth_token);
+-  // Provides additional statistics payload for ActivepingTelemetryTopicProvider
+-  class StatsPayloadProvider {
+-   public:
+-    virtual ~StatsPayloadProvider() = default;
+-    virtual base::Value::Dict GetPayload() const = 0;
+-    virtual void ResetStats() = 0;
+-  };
+-  ActivepingTelemetryTopicProvider(
+-      PrefService* pref_service,
+-      SubscriptionService* subscription_service,
+-      const GURL& base_url,
+-      const std::string& auth_token,
+-      std::unique_ptr<StatsPayloadProvider> stats_payload_provider);
 -  ~ActivepingTelemetryTopicProvider() final;
 -
 -  static GURL DefaultBaseUrl();
@@ -520,11 +739,11 @@
 -  // from |response_content|.
 -  void ParseResponse(std::unique_ptr<std::string> response_content) final;
 -
--  void FetchDebugInfo(DebugInfoCallback callback) const final;
+-  std::string FetchDebugInfo() const final;
 -
 -  // Sets the port used by the embedded http server required for browser tests.
 -  // Must be called before the first call to DefaultBaseUrl().
--  static void SetHttpPortForTesting(int http_port_for_testing);
+-  static void SetHttpsPortForTesting(int https_port_for_testing);
 -
 -  // Sets the internal timing for sending pings required for browser tests.
 -  // Must be called before AdblockTelemetryService::Start().
@@ -535,19 +754,20 @@
 -  void UpdatePrefs(const std::string& ping_response_time);
 -  base::Value GetPayloadInternal() const;
 -
--  const utils::AppInfo app_info_;
 -  raw_ptr<PrefService> pref_service_;
 -  raw_ptr<SubscriptionService> subscription_service_;
 -  const GURL base_url_;
 -  const std::string auth_token_;
+-  std::unique_ptr<StatsPayloadProvider> stats_payload_provider_;
 -};
 -
 -}  // namespace adblock
 -
 -#endif  // COMPONENTS_ADBLOCK_CORE_ACTIVEPING_TELEMETRY_TOPIC_PROVIDER_H_
+deleted file mode 100644
 --- a/components/adblock/core/adblock_telemetry_service.cc
 +++ /dev/null
-@@ -1,295 +0,0 @@
+@@ -1,308 +0,0 @@
 -/*
 - * This file is part of eyeo Chromium SDK,
 - * Copyright (C) 2006-present eyeo GmbH
@@ -580,6 +800,7 @@
 -#include "base/timer/timer.h"
 -#include "components/adblock/core/common/adblock_constants.h"
 -#include "components/adblock/core/common/adblock_prefs.h"
+-#include "components/adblock/core/net/adblock_request_throttle.h"
 -#include "components/prefs/pref_service.h"
 -#include "net/base/load_flags.h"
 -#include "services/network/public/cpp/resource_request.h"
@@ -631,9 +852,11 @@
 - public:
 -  Conversation(
 -      std::unique_ptr<TopicProvider> topic_provider,
--      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory)
+-      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+-      AdblockRequestThrottle* request_throttle)
 -      : topic_provider_(std::move(topic_provider)),
--        url_loader_factory_(url_loader_factory) {}
+-        url_loader_factory_(url_loader_factory),
+-        request_throttle_(request_throttle) {}
 -
 -  bool IsRequestDue() {
 -    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -658,8 +881,9 @@
 -    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 -    VLOG(1) << "[eyeo] Telemetry request for "
 -            << topic_provider_->GetEndpointURL() << " starting now";
--    topic_provider_->GetPayload(base::BindOnce(&Conversation::MakeRequest,
--                                               weak_ptr_factory_.GetWeakPtr()));
+-    is_in_flight_ = true;
+-    request_throttle_->RunWhenRequestsAllowed(base::BindOnce(
+-        &Conversation::OnRequestsAllowed, weak_ptr_factory_.GetWeakPtr()));
 -  }
 -
 -  void Stop() {
@@ -672,8 +896,11 @@
 -  }
 -
 - private:
--  bool IsRequestInFlight() {
--    return url_loader_ != nullptr || weak_ptr_factory_.HasWeakPtrs();
+-  bool IsRequestInFlight() { return is_in_flight_; }
+-
+-  void OnRequestsAllowed() {
+-    topic_provider_->GetPayload(base::BindOnce(&Conversation::MakeRequest,
+-                                               weak_ptr_factory_.GetWeakPtr()));
 -  }
 -
 -  void MakeRequest(std::string payload) {
@@ -723,11 +950,14 @@
 -    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 -    topic_provider_->ParseResponse(std::move(server_response));
 -    url_loader_.reset();
+-    is_in_flight_ = false;
 -  }
 -
 -  SEQUENCE_CHECKER(sequence_checker_);
+-  bool is_in_flight_ = false;
 -  std::unique_ptr<TopicProvider> topic_provider_;
 -  scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
+-  raw_ptr<AdblockRequestThrottle> request_throttle_;
 -  std::unique_ptr<network::SimpleURLLoader> url_loader_;
 -  base::WeakPtrFactory<Conversation> weak_ptr_factory_{this};
 -};
@@ -735,11 +965,11 @@
 -AdblockTelemetryService::AdblockTelemetryService(
 -    SubscriptionService* subscription_service,
 -    scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
--    base::TimeDelta initial_delay,
+-    AdblockRequestThrottle* request_throttle,
 -    base::TimeDelta check_interval)
 -    : subscription_service_(subscription_service),
 -      url_loader_factory_(url_loader_factory),
--      initial_delay_(initial_delay),
+-      request_throttle_(request_throttle),
 -      check_interval_(check_interval) {
 -  DCHECK(subscription_service_);
 -  subscription_service_->AddObserver(this);
@@ -753,7 +983,7 @@
 -void AdblockTelemetryService::AddTopicProvider(
 -    std::unique_ptr<TopicProvider> topic_provider) {
 -  ongoing_conversations_.push_back(std::make_unique<Conversation>(
--      std::move(topic_provider), url_loader_factory_));
+-      std::move(topic_provider), url_loader_factory_, request_throttle_));
 -}
 -
 -void AdblockTelemetryService::Start() {
@@ -767,13 +997,13 @@
 -  }
 -}
 -
--void AdblockTelemetryService::GetTopicProvidersDebugInfo(
--    TopicProvidersDebugInfoCallback service_callback) const {
--  const auto barrier_callback = base::BarrierCallback<std::string>(
--      ongoing_conversations_.size(), std::move(service_callback));
+-std::vector<std::string> AdblockTelemetryService::GetTopicProvidersDebugInfo()
+-    const {
+-  std::vector<std::string> debug_info;
 -  for (const auto& conversation : ongoing_conversations_) {
--    conversation->GetTopicProvider()->FetchDebugInfo(barrier_callback);
+-    debug_info.push_back(conversation->GetTopicProvider()->FetchDebugInfo());
 -  }
+-  return debug_info;
 -}
 -
 -void AdblockTelemetryService::OnEnabledStateChanged(
@@ -782,9 +1012,7 @@
 -  if (config->IsEnabled() && !timer_.IsRunning()) {
 -    VLOG(1) << "[eyeo] Starting periodic Telemetry requests for enabled "
 -               "configuration";
--    timer_.Start(FROM_HERE, initial_delay_,
--                 base::BindRepeating(&AdblockTelemetryService::RunPeriodicCheck,
--                                     base::Unretained(this)));
+-    RunPeriodicCheck();
 -  } else if (!config->IsEnabled() && timer_.IsRunning()) {
 -    VLOG(1) << "[eyeo] Stopping periodic Telemetry requests for disabled "
 -               "configuration";
@@ -799,9 +1027,7 @@
 -  }
 -  if (config->IsEnabled() && !timer_.IsRunning()) {
 -    VLOG(1) << "[eyeo] Starting periodic Telemetry requests for configuration";
--    timer_.Start(FROM_HERE, initial_delay_,
--                 base::BindRepeating(&AdblockTelemetryService::RunPeriodicCheck,
--                                     base::Unretained(this)));
+-    RunPeriodicCheck();
 -  }
 -  // We cannot add twice the same observer, but calling RemoveObserver() for not
 -  // added previously observer is fine. The situation of adding twice the same
@@ -842,10 +1068,18 @@
 -  }
 -}
 -
+-void AdblockTelemetryService::
+-    TriggerConversationsWithoutDueTimeCheckForTesting() {
+-  for (auto& conversation : ongoing_conversations_) {
+-    conversation->StartRequest();
+-  }
+-}
+-
 -}  // namespace adblock
+deleted file mode 100644
 --- a/components/adblock/core/adblock_telemetry_service.h
 +++ /dev/null
-@@ -1,126 +0,0 @@
+@@ -1,130 +0,0 @@
 -/*
 - * This file is part of eyeo Chromium SDK,
 - * Copyright (C) 2006-present eyeo GmbH
@@ -876,8 +1110,10 @@
 -#include "base/time/time.h"
 -#include "base/timer/timer.h"
 -#include "components/adblock/core/configuration/filtering_configuration.h"
+-#include "components/adblock/core/net/adblock_request_throttle.h"
 -#include "components/adblock/core/subscription/subscription_service.h"
 -#include "components/keyed_service/core/keyed_service.h"
+-#include "partition_alloc/pointers/raw_ptr.h"
 -#include "services/network/public/cpp/shared_url_loader_factory.h"
 -#include "url/gurl.h"
 -
@@ -920,12 +1156,12 @@
 -    // Gets debugging info to be logged on chrome://adblock-internals. Do not
 -    // put any secrets here (tokens, api keys). Asynchronous to allow reusing
 -    // the async logic of GetPayload, if needed.
--    virtual void FetchDebugInfo(DebugInfoCallback callback) const = 0;
+-    virtual std::string FetchDebugInfo() const = 0;
 -  };
 -  AdblockTelemetryService(
 -      SubscriptionService* subscription_service_,
 -      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
--      base::TimeDelta initial_delay,
+-      AdblockRequestThrottle* request_throttle,
 -      base::TimeDelta check_interval);
 -  ~AdblockTelemetryService() override;
 -  using TopicProvidersDebugInfoCallback =
@@ -945,15 +1181,17 @@
 -  // FilteringConfiguration::Observer
 -  void OnEnabledStateChanged(FilteringConfiguration* config) override;
 -
--  // Collects debug information from all topic providers. Runs |callback| once
--  // all topic providers have provided their info.
--  void GetTopicProvidersDebugInfo(
--      TopicProvidersDebugInfoCallback callback) const;
+-  // Collects debug information from all topic providers.
+-  std::vector<std::string> GetTopicProvidersDebugInfo() const;
 -  // SubscriptionService::SubscriptionObserver
 -  void OnFilteringConfigurationInstalled(
 -      FilteringConfiguration* config) override;
 -  void OnFilteringConfigurationUninstalled(
 -      std::string_view config_name) override;
+-
+-  // For testing purposes only: triggers immediately requests for all added
+-  // providers
+-  void TriggerConversationsWithoutDueTimeCheckForTesting();
 -
 - private:
 -  void RunPeriodicCheck();
@@ -961,7 +1199,7 @@
 -  SEQUENCE_CHECKER(sequence_checker_);
 -  raw_ptr<SubscriptionService> subscription_service_;
 -  scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
--  base::TimeDelta initial_delay_;
+-  raw_ptr<AdblockRequestThrottle> request_throttle_;
 -  base::TimeDelta check_interval_;
 -
 -  class Conversation;
@@ -972,227 +1210,77 @@
 -}  // namespace adblock
 -
 -#endif  // COMPONENTS_ADBLOCK_CORE_ADBLOCK_TELEMETRY_SERVICE_H_
---- a/components/adblock/core/common/BUILD.gn
-+++ b/components/adblock/core/common/BUILD.gn
-@@ -67,14 +67,6 @@ source_set("common") {
-
- config("eyeo_application_config") {
-   defines = []
+--- a/components/adblock/core/common/adblock_constants.cc
++++ b/components/adblock/core/common/adblock_constants.cc
+@@ -32,9 +32,6 @@ const char kAdblockFilteringConfigurationName[] = "adblock";
+ const char kSubscriptionServiceUserDataKey[] =
+     "adblock_subscription_service_key";
+ 
+-const char kAdblockTelemetryServiceUserDataKey[] =
+-    "adblock_telemetry_service_key";
 -
--  if (eyeo_application_name != "") {
--    defines += [ "EYEO_APPLICATION_NAME=\"$eyeo_application_name\"" ]
--  }
+ const char kSessionStatsServiceUserDataKey[] =
+     "adblock_session_stats_service_key";
+ 
+--- a/components/adblock/core/common/adblock_constants.h
++++ b/components/adblock/core/common/adblock_constants.h
+@@ -40,9 +40,6 @@ extern const char kSubscriptionServiceUserDataKey[];
+ COMPONENT_EXPORT(ADBLOCK_CONSTANTS)
+ extern const char kResourceClassificationRunnerUserDataKey[];
+ 
+-COMPONENT_EXPORT(ADBLOCK_CONSTANTS)
+-extern const char kAdblockTelemetryServiceUserDataKey[];
 -
--  if (eyeo_application_version != "") {
--    defines += [ "EYEO_APPLICATION_VERSION=\"$eyeo_application_version\"" ]
--  }
- }
-
- source_set("utils") {
---- a/components/adblock/content/browser/adblock_internals_page_handler.cc
-+++ b/components/adblock/content/browser/adblock_internals_page_handler.cc
-@@ -19,10 +19,8 @@
-
- #include "base/i18n/time_formatting.h"
- #include "base/strings/utf_string_conversions.h"
--#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
- #include "components/adblock/content/browser/factories/session_stats_factory.h"
- #include "components/adblock/content/browser/factories/subscription_service_factory.h"
+ COMPONENT_EXPORT(ADBLOCK_CONSTANTS)
+ extern const char kSessionStatsServiceUserDataKey[];
+ 
+--- a/components/adblock/docs/design-overview.md
++++ b/components/adblock/docs/design-overview.md
+@@ -6,7 +6,6 @@ This section describes the general design of eyeo Chromium SDK, and how it fits
+ 
+ The SDK is composed of the following `KeyedService`s:
+ 
+-* `AdblockTelemetryService`: Reports anonymous usage statistics to eyeo.
+ * `ContentSecurityPolicyInjector`: Injecting a Content Security Policy header into a HTTP response.
+ * `ElementHider`: Applies element hiding scripts and stylesheets on web pages.
+ * `FilteringConfigurationAndroid` and `ResourceClassificationNotifierAndroid`: Provides JNI bindings for Android components.
+--- a/components/adblock/features.gni
++++ b/components/adblock/features.gni
+@@ -47,7 +47,7 @@ declare_args() {
+   eyeo_disable_filtering_by_default = false
+ 
+   # If true then acceptable ads is disabled by default (applies to 1st run scenario).
+-  eyeo_disable_aa_by_default = false
++  eyeo_disable_aa_by_default = true
+ 
+   # If true, then ChromeDevTools protocol is extended with eyeo commands for non-android builds.
+   # Android builds have extended CDP by default.
+--- a/content/browser/devtools/protocol/eyeo_handler.cc
++++ b/content/browser/devtools/protocol/eyeo_handler.cc
+@@ -16,7 +16,6 @@
+ #include "content/browser/devtools/protocol/eyeo_handler.h"
+ 
+ #include "base/types/strong_alias.h"
 -#include "components/adblock/core/adblock_telemetry_service.h"
  #include "components/adblock/core/common/adblock_constants.h"
+ #include "components/adblock/core/common/adblock_keyed_service_ptr_holder.h"
  #include "components/adblock/core/session_stats.h"
- #include "components/adblock/core/subscription/subscription_config.h"
-@@ -119,11 +117,6 @@
-     content += DebugLine("Total blocked", blocked[CustomFiltersUrl()], 3);
-   }
-
+@@ -345,18 +344,6 @@ Response EyeoHandler::RemoveAllowedDomain(
+ 
+ Response EyeoHandler::GetTelemetryDebugInfo(protocol::String* result) {
+   auto* context = rfh_->GetProcess()->GetBrowserContext();
 -  auto* telemetry_service =
--      adblock::AdblockTelemetryServiceFactory::GetForBrowserContext(context_);
--  telemetry_service->GetTopicProvidersDebugInfo(base::BindOnce(
--      &AdblockInternalsPageHandler::OnTelemetryServiceInfoArrived,
--      std::move(callback), std::move(content)));
+-      adblock::KeyedServicePtrHolder<adblock::AdblockTelemetryService>::Get(
+-          context, adblock::kAdblockTelemetryServiceUserDataKey);
+-  if (!telemetry_service) {
+-    LOG(ERROR) << "[eyeo] EyeoHandler: Missing AdblockTelemetryService!";
+-    return Response::ServerError("Missing AdblockTelemetryService!");
+-  }
+-
+-  for (auto& topic_provider_debug_info :
+-       telemetry_service->GetTopicProvidersDebugInfo()) {
+-    *result += topic_provider_debug_info + ", ";
+-  }
+ 
+   return Response::Success();
  }
-
- void AdblockInternalsPageHandler::ToggleTestpagesFLSubscription(
---- a/components/adblock/content/browser/factories/adblock_telemetry_service_factory.h
-+++ /dev/null
-@@ -1,56 +0,0 @@
--/*
-- * This file is part of eyeo Chromium SDK,
-- * Copyright (C) 2006-present eyeo GmbH
-- *
-- * eyeo Chromium SDK is free software: you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 3 as
-- * published by the Free Software Foundation.
-- *
-- * eyeo Chromium SDK is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
-- */
--
--#ifndef COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
--#define COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
--
--#include "base/time/time.h"
--#include "components/adblock/core/adblock_telemetry_service.h"
--#include "components/keyed_service/content/browser_context_dependency_manager.h"
--#include "components/keyed_service/content/browser_context_keyed_service_factory.h"
--#include "components/prefs/pref_service.h"
--
--namespace adblock {
--class SubscriptionService;
--class AdblockTelemetryServiceFactory
--    : public BrowserContextKeyedServiceFactory {
-- public:
--  static AdblockTelemetryService* GetForBrowserContext(
--      content::BrowserContext* context);
--  static AdblockTelemetryServiceFactory* GetInstance();
--
--  // Sets the initial delay and interval checks required for browser tests.
--  // Must be called before BuildServiceInstanceFor().
--  void SetCheckAndDelayIntervalsForTesting(base::TimeDelta check_interval,
--                                           base::TimeDelta initial_delay);
--
-- private:
--  friend class base::NoDestructor<AdblockTelemetryServiceFactory>;
--  AdblockTelemetryServiceFactory();
--  ~AdblockTelemetryServiceFactory() override;
--
--  // BrowserContextKeyedServiceFactory:
--  KeyedService* BuildServiceInstanceFor(
--      content::BrowserContext* context) const override;
--  bool ServiceIsNULLWhileTesting() const override;
--  content::BrowserContext* GetBrowserContextToUse(
--      content::BrowserContext* context) const override;
--};
--
--}  // namespace adblock
--
--#endif  // COMPONENTS_ADBLOCK_CONTENT_BROWSER_FACTORIES_ADBLOCK_TELEMETRY_SERVICE_FACTORY_H_
---- a/components/adblock/content/browser/factories/adblock_telemetry_service_factory.cc
-+++ /dev/null
-@@ -1,120 +0,0 @@
--/*
-- * This file is part of eyeo Chromium SDK,
-- * Copyright (C) 2006-present eyeo GmbH
-- *
-- * eyeo Chromium SDK is free software: you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 3 as
-- * published by the Free Software Foundation.
-- *
-- * eyeo Chromium SDK is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
-- */
--
--#include "components/adblock/content/browser/factories/adblock_telemetry_service_factory.h"
--
--#include <memory>
--
--#include "base/no_destructor.h"
--#include "components/adblock/content/browser/factories/subscription_service_factory.h"
--#include "components/adblock/core/activeping_telemetry_topic_provider.h"
--#include "components/adblock/core/adblock_telemetry_service.h"
--#include "components/adblock/core/common/adblock_utils.h"
--#include "components/adblock/core/subscription/subscription_service.h"
--#include "components/user_prefs/user_prefs.h"
--#include "content/public/browser/browser_context.h"
--#include "content/public/browser/storage_partition.h"
--
--namespace adblock {
--namespace {
--
--std::optional<base::TimeDelta> g_check_interval_for_testing;
--std::optional<base::TimeDelta> g_initial_delay_for_testing;
--
--base::TimeDelta GetInitialDelay() {
--  static base::TimeDelta kInitialDelay =
--      g_initial_delay_for_testing ? g_initial_delay_for_testing.value()
--                                  : base::Seconds(30);
--  return kInitialDelay;
--}
--
--base::TimeDelta GetCheckInterval() {
--  static base::TimeDelta kCheckInterval =
--      g_check_interval_for_testing ? g_check_interval_for_testing.value()
--                                   : base::Minutes(5);
--  return kCheckInterval;
--}
--
--}  // namespace
--
--// static
--AdblockTelemetryService* AdblockTelemetryServiceFactory::GetForBrowserContext(
--    content::BrowserContext* context) {
--  return static_cast<AdblockTelemetryService*>(
--      GetInstance()->GetServiceForBrowserContext(context, true));
--}
--
--// static
--AdblockTelemetryServiceFactory* AdblockTelemetryServiceFactory::GetInstance() {
--  static base::NoDestructor<AdblockTelemetryServiceFactory> instance;
--  return instance.get();
--}
--
--AdblockTelemetryServiceFactory::AdblockTelemetryServiceFactory()
--    : BrowserContextKeyedServiceFactory(
--          "AdblockTelemetryService",
--          BrowserContextDependencyManager::GetInstance()) {
--  DependsOn(SubscriptionServiceFactory::GetInstance());
--}
--
--AdblockTelemetryServiceFactory::~AdblockTelemetryServiceFactory() = default;
--
--content::BrowserContext* AdblockTelemetryServiceFactory::GetBrowserContextToUse(
--    content::BrowserContext* context) const {
--  if (context->IsOffTheRecord()) {
--    return nullptr;
--  }
--  return context;
--}
--
--KeyedService* AdblockTelemetryServiceFactory::BuildServiceInstanceFor(
--    content::BrowserContext* context) const {
--  // Need to use a URLLoaderFactory specific to the browser context, not from
--  // system_network_context_manager(), because the required Accept-Language
--  // header depends on user's language settings and is not present in requests
--  // made from the System network context.
--  scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
--      context->GetDefaultStoragePartition()
--          ->GetURLLoaderFactoryForBrowserProcess();
--  auto service = std::make_unique<AdblockTelemetryService>(
--      SubscriptionServiceFactory::GetForBrowserContext(context),
--      url_loader_factory, GetInitialDelay(), GetCheckInterval());
--  service->AddTopicProvider(std::make_unique<ActivepingTelemetryTopicProvider>(
--      utils::GetAppInfo(), user_prefs::UserPrefs::Get(context),
--      SubscriptionServiceFactory::GetForBrowserContext(context),
--      ActivepingTelemetryTopicProvider::DefaultBaseUrl(),
--      ActivepingTelemetryTopicProvider::DefaultAuthToken()));
--
--  if (url_loader_factory) {
--    service->Start();
--  }
--
--  return service.release();
--}
--
--bool AdblockTelemetryServiceFactory::ServiceIsNULLWhileTesting() const {
--  return true;
--}
--
--void AdblockTelemetryServiceFactory::SetCheckAndDelayIntervalsForTesting(
--    base::TimeDelta check_interval,
--    base::TimeDelta initial_delay) {
--  g_check_interval_for_testing = check_interval;
--  g_initial_delay_for_testing = initial_delay;
--}
--
--}  // namespace adblock

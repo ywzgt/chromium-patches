@@ -7,4 +7,4 @@ eyeo-sdk-android_settings.patch
 eyeo-sdk-extension_api.patch
 eyeo-sdk-webview_integration.patch
 Cus-Remove-eyeo-sdk-user-counting.patch
-Cus-Remove-eyeo-sdk-user-counting-webview.patch
+sharing-hub-always-use-visible-URL.patch

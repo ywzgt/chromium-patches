@@ -1,0 +1,350 @@
+diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
+index 69176bb..cae5863 100644
+--- a/chrome/android/chrome_java_sources.gni
++++ b/chrome/android/chrome_java_sources.gni
+@@ -983,6 +983,7 @@ chrome_java_sources = [
+   "java/src/org/chromium/chrome/browser/suggestions/mostvisited/MostVisitedSitesMetadataUtils.java",
+   "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesCoordinator.java",
+   "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesLayout.java",
++  "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesGridLayout.java",
+   "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesMediator.java",
+   "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesProperties.java",
+   "java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesViewBinder.java",
+diff --git a/chrome/android/java/res/layout/mv_tiles_container.xml b/chrome/android/java/res/layout/mv_tiles_container.xml
+index a88c0dc..de4e3c7 100644
+--- a/chrome/android/java/res/layout/mv_tiles_container.xml
++++ b/chrome/android/java/res/layout/mv_tiles_container.xml
+@@ -31,7 +31,7 @@ found in the LICENSE file.
+   <!-- Site suggestion tile grid placeholder -->
+   <ViewStub
+       android:id="@+id/mv_tiles_placeholder_stub"
+-      android:layout_width="wrap_content"
++      android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:inflatedId="@+id/tile_grid_placeholder"
+       android:layout="@layout/new_tab_page_tile_grid_placeholder" />
+diff --git a/chrome/android/java/res/layout/mv_tiles_layout.xml b/chrome/android/java/res/layout/mv_tiles_layout.xml
+index 9eb24ef..1fd2114 100644
+--- a/chrome/android/java/res/layout/mv_tiles_layout.xml
++++ b/chrome/android/java/res/layout/mv_tiles_layout.xml
+@@ -5,14 +5,9 @@ Use of this source code is governed by a BSD-style license that can be
+ found in the LICENSE file.
+ -->
+ 
+-<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++<org.chromium.chrome.browser.suggestions.tile.MostVisitedTilesGridLayout
++    xmlns:android="http://schemas.android.com/apk/res/android"
++    android:id="@+id/mv_tiles_layout"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+-    android:scrollbars="none">
+-
+-  <org.chromium.chrome.browser.suggestions.tile.MostVisitedTilesLayout
+-      android:id="@+id/mv_tiles_layout"
+-      android:layout_width="wrap_content"
+-      android:layout_height="match_parent"
+-      android:orientation="horizontal" />
+-</HorizontalScrollView>
++    android:layout_gravity="center_horizontal" />
+diff --git a/chrome/android/java/res/layout/new_tab_page_tile_grid_placeholder.xml b/chrome/android/java/res/layout/new_tab_page_tile_grid_placeholder.xml
+index d6b5555..3037404 100644
+--- a/chrome/android/java/res/layout/new_tab_page_tile_grid_placeholder.xml
++++ b/chrome/android/java/res/layout/new_tab_page_tile_grid_placeholder.xml
+@@ -17,14 +17,14 @@ found in the LICENSE file.
+     android:orientation="vertical">
+ 
+     <ImageView
+-        android:layout_width="wrap_content"
++        android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_marginBottom="15dp"
+         tools:ignore="ContentDescription"
+         android:src="@drawable/ic_most_visited_placeholder" />
+ 
+     <TextView
+-        android:layout_width="wrap_content"
++        android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_marginBottom="8dp"
+         android:color="#c8c8c8"
+@@ -33,11 +33,11 @@ found in the LICENSE file.
+         android:textSize="16sp" />
+ 
+     <TextView
+-        android:layout_width="wrap_content"
++        android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:color="#c8c8c8"
+         android:gravity="center_horizontal"
+         android:text="@string/most_visited_placeholder_summary"
+         android:textSize="12sp" />
+ 
+-</LinearLayout>
+\ No newline at end of file
++</LinearLayout>
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/identity_disc/IdentityDiscController.java b/chrome/android/java/src/org/chromium/chrome/browser/identity_disc/IdentityDiscController.java
+index 081490a..3ee920a 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/identity_disc/IdentityDiscController.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/identity_disc/IdentityDiscController.java
+@@ -167,7 +167,10 @@ public class IdentityDiscController
+ 
+         mButtonData.setButtonSpec(
+                 buttonSpecWithDrawableAndDescription(mButtonData.getButtonSpec(), email));
+-        mButtonData.setCanShow(true);
++        if (email == null || email.trim().isEmpty())
++            mButtonData.setCanShow(false);
++        else
++            mButtonData.setCanShow(true);
+     }
+ 
+     private ButtonSpec buttonSpecWithDrawableAndDescription(
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/suggestions/mostvisited/MostVisitedSitesBridge.java b/chrome/android/java/src/org/chromium/chrome/browser/suggestions/mostvisited/MostVisitedSitesBridge.java
+index e0ae372..9685344 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/suggestions/mostvisited/MostVisitedSitesBridge.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/suggestions/mostvisited/MostVisitedSitesBridge.java
+@@ -21,7 +21,7 @@ public class MostVisitedSitesBridge implements MostVisitedSites {
+      * Maximum number of tiles that is explicitly supported. UMA relies on this value, so even if
+      * the UI supports it, getting more can raise unexpected issues.
+      */
+-    public static final int MAX_TILE_COUNT = 12;
++    public static final int MAX_TILE_COUNT = 12 * 2;
+ 
+     private long mNativeMostVisitedSitesBridge;
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesGridLayout.java b/chrome/android/java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesGridLayout.java
+new file mode 100644
+index 0000000..2ffaa01
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/suggestions/tile/MostVisitedTilesGridLayout.java
+@@ -0,0 +1,193 @@
++// Copyright 2015 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++package org.chromium.chrome.browser.suggestions.tile;
++
++import android.content.Context;
++import android.content.res.Configuration;
++import android.content.res.Resources;
++import android.content.res.TypedArray;
++import android.util.AttributeSet;
++import android.util.Pair;
++import android.view.View;
++import android.widget.FrameLayout;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.VisibleForTesting;
++
++import org.chromium.base.MathUtils;
++import org.chromium.base.library_loader.LibraryLoader;
++import org.chromium.chrome.R;
++import org.chromium.chrome.browser.flags.ChromeFeatureList;
++import org.chromium.chrome.browser.suggestions.SiteSuggestion;
++import org.chromium.ui.base.DeviceFormFactor;
++
++/** A layout that arranges tiles in a grid. */
++public class MostVisitedTilesGridLayout extends FrameLayout {
++    private final int mMinHorizontalSpacing;
++    private final int mMaxHorizontalSpacing;
++    private final int mMaxWidth;
++
++    private int mVerticalSpacing;
++    private int mMaxRows = 4;
++    private int mMaxColumns = 4;
++
++    /**
++     * Constructor for inflating from XML.
++     *
++     * @param context The view context in which this item will be shown.
++     * @param attrs The attributes of the XML tag that is inflating the view.
++     */
++    public MostVisitedTilesGridLayout(Context context, AttributeSet attrs) {
++        super(context, attrs);
++
++        Resources res = getResources();
++        mVerticalSpacing =
++                getResources().getDimensionPixelOffset(getGridMVTVerticalSpacingResourcesId());
++        TypedArray styledAttrs =
++                context.obtainStyledAttributes(attrs, R.styleable.MostVisitedTilesGridLayout);
++        mMinHorizontalSpacing =
++                styledAttrs.getDimensionPixelOffset(
++                        R.styleable.MostVisitedTilesGridLayout_minHorizontalSpacing,
++                        res.getDimensionPixelOffset(
++                                R.dimen.tile_grid_layout_min_horizontal_spacing));
++        styledAttrs.recycle();
++        mMaxHorizontalSpacing = Integer.MAX_VALUE;
++        mMaxWidth = Integer.MAX_VALUE;
++    }
++
++    /** Sets the maximum number of rows to display. Any items that don't fit will be hidden. */
++    public void setMaxRows(int rows) {
++        mMaxRows = rows;
++    }
++
++    /** Sets the maximum number of columns to display. Any items that don't fit will be hidden. */
++    public void setMaxColumns(int columns) {
++        mMaxColumns = columns;
++    }
++
++    @Override
++    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
++        int totalWidth = Math.min(MeasureSpec.getSize(widthMeasureSpec), mMaxWidth);
++        int childCount = getChildCount();
++        if (childCount == 0) {
++            setMeasuredDimension(totalWidth, resolveSize(0, heightMeasureSpec));
++            return;
++        }
++
++        // Measure the children. We don't use the ViewGroup.measureChildren() method here because
++        // it only measures visible children. In a situation where a child is invisible before
++        // this measurement and we decide to show it after the measurement, it will not have its
++        // dimensions and will not be displayed.
++        for (int i = 0; i < childCount; i++) {
++            measureChild(getChildAt(i), MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED);
++        }
++
++        // Determine the number of columns that will fit.
++        int childHeight = getChildAt(0).getMeasuredHeight();
++        int childWidth = getChildAt(0).getMeasuredWidth();
++        int numColumns =
++                MathUtils.clamp(
++                        (totalWidth + mMinHorizontalSpacing) / (childWidth + mMinHorizontalSpacing),
++                        1,
++                        mMaxColumns);
++
++        // Determine how much padding to use between and around the tiles.
++        int gridWidthMinusColumns = Math.max(0, totalWidth - numColumns * childWidth);
++        Pair<Integer, Integer> gridProperties =
++                computeHorizontalDimensions(gridWidthMinusColumns, numColumns);
++        int gridStart = gridProperties.first;
++        int horizontalSpacing = gridProperties.second;
++
++        // Limit the number of rows to mMaxRows.
++        int visibleChildCount = Math.min(childCount, mMaxRows * numColumns);
++
++        // Arrange the visible children in a grid.
++        int numRows = (visibleChildCount + numColumns - 1) / numColumns;
++        int paddingTop = getPaddingTop();
++        boolean isRtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
++
++        for (int i = 0; i < visibleChildCount; i++) {
++            View child = getChildAt(i);
++            child.setVisibility(View.VISIBLE);
++            int row = i / numColumns;
++            int column = i % numColumns;
++            int childTop = row * (childHeight + mVerticalSpacing);
++            int childStart = gridStart + (column * (childWidth + horizontalSpacing));
++            MarginLayoutParams layoutParams = (MarginLayoutParams) child.getLayoutParams();
++            layoutParams.setMargins(isRtl ? 0 : childStart, childTop, isRtl ? childStart : 0, 0);
++            child.setLayoutParams(layoutParams);
++        }
++
++        // Hide any extra children in case there are more than needed for the maximum number of
++        // rows.
++        for (int i = visibleChildCount; i < childCount; i++) {
++            getChildAt(i).setVisibility(View.GONE);
++        }
++
++        int totalHeight =
++                paddingTop
++                        + getPaddingBottom()
++                        + numRows * childHeight
++                        + (numRows - 1) * mVerticalSpacing;
++
++        setMeasuredDimension(totalWidth, resolveSize(totalHeight, heightMeasureSpec));
++    }
++
++    /**
++     * @param availableWidth The space available to spread between and around the tiles.
++     * @param numColumns The number of columns to be organised.
++     * @return The [gridStart, horizontalSpacing] pair of dimensions.
++     */
++    @VisibleForTesting
++    Pair<Integer, Integer> computeHorizontalDimensions(int availableWidth, int numColumns) {
++        int gridStart;
++        float horizontalSpacing;
++
++        // Identically sized spacers are added both between and around the tiles.
++        int spacerCount = numColumns + 1;
++        horizontalSpacing = (float) availableWidth / spacerCount;
++        gridStart = Math.round(horizontalSpacing);
++
++        if (horizontalSpacing < mMinHorizontalSpacing
++                || horizontalSpacing > mMaxHorizontalSpacing) {
++            // Ensure column spacing isn't greater than mMaxHorizontalSpacing.
++            long gridSidePadding = availableWidth - (long) mMaxHorizontalSpacing * (numColumns - 1);
++            if (gridSidePadding > 0) {
++                horizontalSpacing = mMaxHorizontalSpacing;
++                gridStart = (int) (gridSidePadding / 2);
++            } else {
++                horizontalSpacing = (float) availableWidth / Math.max(1, numColumns - 1);
++                gridStart = 0;
++            }
++        }
++        int screenWidth = getResources().getDisplayMetrics().widthPixels;
++        int screenHeight = getResources().getDisplayMetrics().heightPixels;
++        String logMessage =
++                "|horizontalSpacing| = "
++                        + horizontalSpacing
++                        + " |numColumns| = "
++                        + numColumns
++                        + " |availableWidth| = "
++                        + availableWidth
++                        + " |screenWidth| = "
++                        + screenWidth
++                        + " |screenHeight| = "
++                        + screenHeight
++                        + ".";
++        assert horizontalSpacing >= mMinHorizontalSpacing
++                : "Horizontal spacing shouldn't be smaller than minimal horizontal spacing: "
++                        + logMessage;
++        assert horizontalSpacing <= mMaxHorizontalSpacing
++                : "Horizontal spacing shouldn't be larger than maximal horizontal spacing: "
++                        + logMessage;
++
++        return Pair.create(gridStart, Math.round(horizontalSpacing));
++    }
++
++    // TODO(crbug.com/40226731): Remove this method when the Feed position experiment is cleaned up.
++    private int getGridMVTVerticalSpacingResourcesId() {
++        return R.dimen.tile_grid_layout_vertical_spacing;
++    }
++}
+diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+index 9bd9110..122b12c 100644
+--- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
++++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+@@ -759,7 +759,7 @@ public abstract class ChromeFeatureList {
+     public static final CachedFlag sLogoPolish = newCachedFlag(LOGO_POLISH, true);
+     public static final CachedFlag sLogoPolishAnimationKillSwitch =
+             newCachedFlag(LOGO_POLISH_ANIMATION_KILL_SWITCH, true);
+-    public static final CachedFlag sMagicStackAndroid = newCachedFlag(MAGIC_STACK_ANDROID, true);
++    public static final CachedFlag sMagicStackAndroid = newCachedFlag(MAGIC_STACK_ANDROID, false);
+     public static final CachedFlag sMostVisitedTilesCustomization =
+             newCachedFlag(MOST_VISITED_TILES_CUSTOMIZATION, false);
+     public static final CachedFlag sMostVisitedTilesReselect =
+diff --git a/chrome/browser/segmentation_platform/android/java/src/org/chromium/chrome/browser/segmentation_platform/client_util/HomeModulesRankingHelper.java b/chrome/browser/segmentation_platform/android/java/src/org/chromium/chrome/browser/segmentation_platform/client_util/HomeModulesRankingHelper.java
+index 755e99d..c7f6001 100644
+--- a/chrome/browser/segmentation_platform/android/java/src/org/chromium/chrome/browser/segmentation_platform/client_util/HomeModulesRankingHelper.java
++++ b/chrome/browser/segmentation_platform/android/java/src/org/chromium/chrome/browser/segmentation_platform/client_util/HomeModulesRankingHelper.java
+@@ -32,6 +32,7 @@ public final class HomeModulesRankingHelper {
+             @NonNull Profile profile,
+             @NonNull InputContext freshnessAndEphemeralInputs,
+             @NonNull Callback<List<String>> callback) {
++        if ((true)) return;
+         HomeModulesRankingHelperJni.get()
+                 .getClassificationResult(
+                         profile,
+diff --git a/components/history/core/browser/top_sites_impl.h b/components/history/core/browser/top_sites_impl.h
+index 622ebc9..b0bbb07 100644
+--- a/components/history/core/browser/top_sites_impl.h
++++ b/components/history/core/browser/top_sites_impl.h
+@@ -40,7 +40,7 @@ class TopSitesImplTest;
+ struct SitesAndQueriesRequest;
+ 
+ // How many top sites to store in the cache.
+-static constexpr size_t kTopSitesNumber = 10;
++static constexpr size_t kTopSitesNumber = 4 * 4;
+ 
+ // This class allows requests for most visited urls on any thread. All other
+ // methods must be invoked on the UI thread. All mutations to internal state

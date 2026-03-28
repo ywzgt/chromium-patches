@@ -1,9 +1,9 @@
-From 5c34a9761ed643a53c3c2a8a6d9eb52b55645db3 Mon Sep 17 00:00:00 2001
+From d33635e627b6db95f2717d0ab2b2809c2c3ccc78 Mon Sep 17 00:00:00 2001
 From: chromium-sdk <project_26591639_bot@noreply.gitlab.com>
-Date: Thu, 30 May 2024 07:40:09 +0200
+Date: Thu, 10 Apr 2025 12:31:05 +0200
 Subject: [PATCH] eyeo Browser Ad filtering Solution: Android API Module
 
-Based on Chromium 126.0.6478.8
+Based on Chromium 135.0.7049.38
 
 Pre-requisites: eyeo Browser Ad filtering Solution: Base Module
 ---
@@ -13,39 +13,41 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module
  chrome/browser/BUILD.gn                       |   4 +
  .../android/adblock/tab_id_translator_jni.cc  |  41 ++
  chrome/browser/ui/BUILD.gn                    |   7 +
- components/adblock/android/BUILD.gn           | 105 ++++
- .../adblock/android/adblock_controller_jni.cc | 128 +++++
- .../filtering_configuration_android.cc        | 226 ++++++++
+ components/adblock/android/BUILD.gn           | 107 ++++
+ .../adblock/android/adblock_controller_jni.cc | 132 +++++
+ .../filtering_configuration_android.cc        | 245 ++++++++
  .../android/filtering_configuration_android.h |  94 +++
- .../components/adblock/AdblockController.java | 259 +++++++++
+ .../components/adblock/AdblockController.java | 283 +++++++++
+ .../components/adblock/AdblockSwitches.java   |  22 +
  .../components/adblock/ContentType.java       |  61 ++
- .../adblock/FilteringConfiguration.java       | 409 +++++++++++++
+ .../adblock/FilteringConfiguration.java       | 424 +++++++++++++
  .../ResourceClassificationNotifier.java       | 233 ++++++++
  .../adblock/ResourceFilteringCounters.java    | 111 ++++
- .../adblock/AdblockControllerTestBase.java    |  64 +++
- .../adblock/DefaultSettingsTestBase.java      |  72 +++
- .../FilteringConfigurationTestBase.java       | 421 ++++++++++++++
- .../TestPagesCircumventionTestBase.java       |  65 +++
+ .../adblock/AdblockControllerTestBase.java    |  64 ++
+ .../adblock/DefaultSettingsTestBase.java      |  73 +++
+ .../FilteringConfigurationTestBase.java       | 421 +++++++++++++
+ .../TestPagesCircumventionTestBase.java       |  65 ++
  .../adblock/TestPagesCspTestBase.java         |  86 +++
  .../TestPagesElemhideEmuInvTestBase.java      | 116 ++++
- .../adblock/TestPagesElemhideEmuTestBase.java | 161 ++++++
- .../adblock/TestPagesElemhideTestBase.java    | 159 ++++++
- .../adblock/TestPagesExceptionTestBase.java   | 190 +++++++
+ .../adblock/TestPagesElemhideEmuTestBase.java | 161 +++++
+ .../adblock/TestPagesElemhideTestBase.java    | 159 +++++
+ .../adblock/TestPagesExceptionTestBase.java   | 190 ++++++
  .../adblock/TestPagesFilterTestBase.java      | 277 +++++++++
  .../TestPagesHeaderFilterTestBase.java        | 102 ++++
- .../adblock/TestPagesHelperBase.java          | 230 ++++++++
+ .../adblock/TestPagesHelperBase.java          | 230 +++++++
  .../adblock/TestPagesInlineCssTestBase.java   |  94 +++
  .../adblock/TestPagesRemoveTestBase.java      |  94 +++
  .../adblock/TestPagesRewriteTestBase.java     | 175 ++++++
+ .../TestPagesServiceWorkersTestBase.java      |  71 +++
  .../adblock/TestPagesSiteKeyTestBase.java     |  51 ++
- .../adblock/TestPagesSnippetsTestBase.java    | 538 ++++++++++++++++++
+ .../adblock/TestPagesSnippetsTestBase.java    | 560 ++++++++++++++++++
  .../adblock/TestPagesWebsocketTestBase.java   |  54 ++
  .../TestPagesWildcardDomainTestBase.java      | 116 ++++
- .../TestResourceFilteringObserver.java        | 181 ++++++
- .../adblock/TestVerificationUtils.java        | 229 ++++++++
- ...esource_classification_notifier_android.cc | 161 ++++++
+ .../TestResourceFilteringObserver.java        | 180 ++++++
+ .../adblock/TestVerificationUtils.java        | 220 +++++++
+ ...esource_classification_notifier_android.cc | 163 +++++
  ...resource_classification_notifier_android.h |  72 +++
- 38 files changed, 5441 insertions(+)
+ 40 files changed, 5613 insertions(+)
  create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/adblock/TabIdTranslator.java
  create mode 100644 chrome/browser/android/adblock/tab_id_translator_jni.cc
  create mode 100644 components/adblock/android/BUILD.gn
@@ -53,6 +55,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module
  create mode 100644 components/adblock/android/filtering_configuration_android.cc
  create mode 100644 components/adblock/android/filtering_configuration_android.h
  create mode 100644 components/adblock/android/java/src/org/chromium/components/adblock/AdblockController.java
+ create mode 100644 components/adblock/android/java/src/org/chromium/components/adblock/AdblockSwitches.java
  create mode 100644 components/adblock/android/java/src/org/chromium/components/adblock/ContentType.java
  create mode 100644 components/adblock/android/java/src/org/chromium/components/adblock/FilteringConfiguration.java
  create mode 100644 components/adblock/android/java/src/org/chromium/components/adblock/ResourceClassificationNotifier.java
@@ -72,6 +75,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesInlineCssTestBase.java
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRemoveTestBase.java
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRewriteTestBase.java
+ create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesServiceWorkersTestBase.java
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSiteKeyTestBase.java
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSnippetsTestBase.java
  create mode 100644 components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWebsocketTestBase.java
@@ -82,7 +86,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module
  create mode 100644 components/adblock/android/resource_classification_notifier_android.h
 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
-index ef0682d1d5..14bcedccc3 100644
+index 32a57e5..f4851de 100644
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
 @@ -1,6 +1,9 @@
@@ -95,15 +99,15 @@ index ef0682d1d5..14bcedccc3 100644
  
  import("//build/android/resource_sizes.gni")
  import("//build/config/android/config.gni")
-@@ -275,6 +278,7 @@ if (current_toolchain == default_toolchain) {
-     } else {
-       deps += [ "//components/plus_addresses/android:java_resources" ]
+@@ -284,6 +287,7 @@ if (current_toolchain == default_toolchain) {
+     if (enable_screen_capture) {
+       deps += [ "//chrome/browser:screen_capture_java_resources" ]
      }
 +
    }
  
-   android_library("app_hooks_java") {
-@@ -515,6 +519,7 @@ if (current_toolchain == default_toolchain) {
+   android_resources("java_overlay_resources") {
+@@ -538,6 +542,7 @@ if (current_toolchain == default_toolchain) {
        "//chrome/browser/xsurface:java",
        "//chrome/browser/xsurface_provider:dependency_provider_impl_java",
        "//chrome/browser/xsurface_provider:java",
@@ -111,33 +115,33 @@ index ef0682d1d5..14bcedccc3 100644
        "//components/android_autofill/browser:java",
        "//components/autofill/android:autofill_features_java",
        "//components/autofill/android:autofill_java",
-@@ -732,6 +737,7 @@ if (current_toolchain == default_toolchain) {
-       "//url/mojom:url_mojom_gurl_java",
+@@ -767,6 +772,7 @@ if (current_toolchain == default_toolchain) {
+       "//url/mojom:url_mojom_origin_java",
      ]
  
 +
      deps += feed_deps
  
      srcjar_deps = [
-@@ -1664,6 +1670,7 @@ if (current_toolchain == default_toolchain) {
-       "//chrome/android/webapk/libs/client:client_java",
-       "//chrome/android/webapk/libs/common:common_java",
-       "//chrome/android/webapk/libs/runtime_library:webapk_service_aidl_java",
+@@ -1330,6 +1336,7 @@ if (current_toolchain == default_toolchain) {
+       "javatests:chrome_test_java_org.chromium.chrome.browser.toolbar",
+       "javatests:chrome_test_java_org.chromium.chrome.browser.webapps",
+       "javatests:chrome_test_java_various",
 +      "//chrome/browser/adblock/android:adblock_java_tests",
-       "//chrome/browser/android/browserservices/intents:java",
-       "//chrome/browser/android/browserservices/verification:java",
        "//chrome/browser/android/browserservices/verification:javatests",
-@@ -2022,6 +2029,7 @@ if (current_toolchain == default_toolchain) {
-     srcjar_deps = [ "//chrome/browser:tos_dialog_behavior_generated_enum" ]
- 
-     data = [
-+      "//chrome/test/data/adblock/",
-       "//chrome/test/data/android/",
-       "//chrome/test/data/autofill/",
-       "//chrome/test/data/background_sync/",
-@@ -3820,6 +3828,12 @@ generate_jni("chrome_jni_headers") {
-     "java/src/org/chromium/chrome/browser/webapps/WebappRegistry.java",
-   ]
+       "//chrome/browser/android/httpclient:javatests",
+       "//chrome/browser/android/metrics:ukm_javatests",
+@@ -1400,6 +1407,7 @@ if (current_toolchain == default_toolchain) {
+       "//chrome/test/data/translate/",
+       "//chrome/test/data/webauthn/",
+       "//chrome/test/media_router/resources/",
++      "//components/test/data/adblock/",
+       "//components/test/data/autofill/",
+       "//components/test/data/payments/",
+       "//content/test/data/browsing_data/",
+@@ -3213,6 +3221,12 @@ generate_jni("chrome_jni_headers") {
+     sources += [ "java/src/org/chromium/chrome/browser/media/MediaCapturePickerDialogBridge.java" ]
+   }
  
 +  ### Android API module start
 +  sources +=
@@ -148,7 +152,7 @@ index ef0682d1d5..14bcedccc3 100644
    # Used for testing only, should not be shipped to end users.
    if (enable_offline_pages_harness) {
      sources += [ "java/src/org/chromium/chrome/browser/offlinepages/evaluation/OfflinePageEvaluationBridge.java" ]
-@@ -3895,6 +3909,7 @@ group("jni_headers") {
+@@ -3303,6 +3317,7 @@ group("jni_headers") {
      "//chrome/browser/ui/messages/android:jni_headers",
      "//chrome/browser/util:jni_headers",
      "//chrome/browser/webauthn/android:jni_headers",
@@ -157,7 +161,7 @@ index ef0682d1d5..14bcedccc3 100644
      "//components/content_relationship_verification/android:jni_headers",
      "//components/image_fetcher:jni_headers",
 diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
-index cee75417da..7c14072853 100644
+index 69176bb..b1b756a 100644
 --- a/chrome/android/chrome_java_sources.gni
 +++ b/chrome/android/chrome_java_sources.gni
 @@ -1,6 +1,9 @@
@@ -168,19 +172,19 @@ index cee75417da..7c14072853 100644
 +# This source code is a part of eyeo Chromium SDK.
 +# Use of this source code is governed by the GPLv3 that can be found in the components/adblock/LICENSE file.
  
- chrome_java_sources = [
-   "java/src/com/google/android/apps/chrome/appwidget/bookmarks/BookmarkThumbnailWidgetProvider.java",
-@@ -59,6 +62,7 @@ chrome_java_sources = [
-   "java/src/org/chromium/chrome/browser/accessibility/settings/AccessibilitySettings.java",
+ import("//content/public/common/features.gni")
+ 
+@@ -54,6 +57,7 @@ chrome_java_sources = [
+   "java/src/org/chromium/chrome/browser/accessibility/AccessibilityTabHelper.java",
+   "java/src/org/chromium/chrome/browser/accessibility/PageZoomIphController.java",
    "java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java",
-   "java/src/org/chromium/chrome/browser/accessibility/settings/TextScalePreference.java",
 +  "java/src/org/chromium/chrome/browser/adblock/TabIdTranslator.java",
-   "java/src/org/chromium/chrome/browser/announcement/AnnouncementNotificationManager.java",
-   "java/src/org/chromium/chrome/browser/app/ChromeActivity.java",
-   "java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java",
+   "java/src/org/chromium/chrome/browser/ai/AiAssistantService.java",
+   "java/src/org/chromium/chrome/browser/ai/PageSummaryButtonController.java",
+   "java/src/org/chromium/chrome/browser/ai/SystemAiProvider.java",
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/adblock/TabIdTranslator.java b/chrome/android/java/src/org/chromium/chrome/browser/adblock/TabIdTranslator.java
 new file mode 100644
-index 0000000000..163fdf2a7d
+index 0000000..163fdf2
 --- /dev/null
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/adblock/TabIdTranslator.java
 @@ -0,0 +1,36 @@
@@ -221,11 +225,11 @@ index 0000000000..163fdf2a7d
 +    }
 +}
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
-index d77f082c85..917816f926 100644
+index f2e52a0..d3aaeec 100644
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -3527,6 +3527,10 @@ static_library("browser") {
-       "webauthn/android/webauthn_request_delegate_android.h",
+@@ -3241,6 +3241,10 @@ static_library("browser") {
+       "touch_to_fill/password_manager/touch_to_fill_controller_webauthn_delegate.h",
      ]
  
 +    ### Android API module start
@@ -233,11 +237,11 @@ index d77f082c85..917816f926 100644
 +
 +    ### Android API module end
  
-     public_deps += [
-       "//chrome/android/features/dev_ui:buildflags",
+     deps += [
+       ":delta_file_proto",
 diff --git a/chrome/browser/android/adblock/tab_id_translator_jni.cc b/chrome/browser/android/adblock/tab_id_translator_jni.cc
 new file mode 100644
-index 0000000000..731aa7bd3a
+index 0000000..731aa7b
 --- /dev/null
 +++ b/chrome/browser/android/adblock/tab_id_translator_jni.cc
 @@ -0,0 +1,41 @@
@@ -283,11 +287,11 @@ index 0000000000..731aa7bd3a
 +  return tab->GetAndroidId();
 +}
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index cc7eaf76ea..2be6381b19 100644
+index e241b49..8dc510a 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -1082,6 +1082,13 @@ static_library("ui") {
-     # TODO(b/335257259): Resolve circular deps.
+@@ -984,6 +984,13 @@ static_library("ui") {
+     # Any circular includes must depend on the target "//chrome/browser:browser_public_dependencies".
      allow_circular_includes_from += [ "//chrome/browser/facilitated_payments" ]
  
 +    ### Android API module start
@@ -302,10 +306,10 @@ index cc7eaf76ea..2be6381b19 100644
      sources += [
 diff --git a/components/adblock/android/BUILD.gn b/components/adblock/android/BUILD.gn
 new file mode 100644
-index 0000000000..1ad11ae012
+index 0000000..7791421
 --- /dev/null
 +++ b/components/adblock/android/BUILD.gn
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,107 @@
 +# This file is part of eyeo Chromium SDK,
 +# Copyright (C) 2006-present eyeo GmbH
 +# eyeo Chromium SDK is free software: you can redistribute it and/or modify
@@ -357,6 +361,7 @@ index 0000000000..1ad11ae012
 +android_library("adblock_controller_java") {
 +  sources = [
 +    "java/src/org/chromium/components/adblock/AdblockController.java",
++    "java/src/org/chromium/components/adblock/AdblockSwitches.java",
 +    "java/src/org/chromium/components/adblock/ContentType.java",
 +    "java/src/org/chromium/components/adblock/FilteringConfiguration.java",
 +    "java/src/org/chromium/components/adblock/ResourceClassificationNotifier.java",
@@ -392,6 +397,7 @@ index 0000000000..1ad11ae012
 +    "javatests/src/org/chromium/components/adblock/TestPagesInlineCssTestBase.java",
 +    "javatests/src/org/chromium/components/adblock/TestPagesRemoveTestBase.java",
 +    "javatests/src/org/chromium/components/adblock/TestPagesRewriteTestBase.java",
++    "javatests/src/org/chromium/components/adblock/TestPagesServiceWorkersTestBase.java",
 +    "javatests/src/org/chromium/components/adblock/TestPagesSiteKeyTestBase.java",
 +    "javatests/src/org/chromium/components/adblock/TestPagesSnippetsTestBase.java",
 +    "javatests/src/org/chromium/components/adblock/TestPagesWebsocketTestBase.java",
@@ -413,10 +419,10 @@ index 0000000000..1ad11ae012
 +}
 diff --git a/components/adblock/android/adblock_controller_jni.cc b/components/adblock/android/adblock_controller_jni.cc
 new file mode 100644
-index 0000000000..eb13f800ff
+index 0000000..a358710
 --- /dev/null
 +++ b/components/adblock/android/adblock_controller_jni.cc
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,132 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -467,7 +473,8 @@ index 0000000000..eb13f800ff
 +                                   const std::string& url,
 +                                   const std::string& title,
 +                                   const std::string& version,
-+                                   const std::vector<std::string>& languages) {
++                                   const std::vector<std::string>& languages,
++                                   const bool autoinstalled) {
 +  ScopedJavaLocalRef<jobject> url_param(
 +      env, env->NewObject(url_class.obj(), url_constructor,
 +                          ConvertUTF8ToJavaString(env, url).obj()));
@@ -475,7 +482,8 @@ index 0000000000..eb13f800ff
 +  return Java_Subscription_Constructor(env, url_param,
 +                                       ConvertUTF8ToJavaString(env, title),
 +                                       ConvertUTF8ToJavaString(env, version),
-+                                       ToJavaArrayOfStrings(env, languages));
++                                       ToJavaArrayOfStrings(env, languages),
++                                       autoinstalled ? JNI_TRUE : JNI_FALSE);
 +}
 +
 +std::vector<ScopedJavaLocalRef<jobject>> CSubscriptionsToJObjects(
@@ -489,7 +497,9 @@ index 0000000000..eb13f800ff
 +  for (auto& sub : subscriptions) {
 +    jobjects.push_back(ToJava(
 +        env, url_class, url_constructor, sub->GetSourceUrl().spec(),
-+        sub->GetTitle(), sub->GetCurrentVersion(), std::vector<std::string>{}));
++        sub->GetTitle(), sub->GetCurrentVersion(), std::vector<std::string>{},
++        sub->GetInstallationState() ==
++            adblock::InstalledSubscription::InstallationState::AutoInstalled));
 +  }
 +  return jobjects;
 +}
@@ -508,8 +518,8 @@ index 0000000000..eb13f800ff
 +      DCHECK(sub.url.is_valid());
 +      if (sub.url.is_valid()) {
 +        jobjects.push_back(ToJava(env, url_class, url_constructor,
-+                                  sub.url.spec(), sub.title, "",
-+                                  sub.languages));
++                                  sub.url.spec(), sub.title, "", sub.languages,
++                                  false));
 +      }
 +    }
 +  }
@@ -547,10 +557,10 @@ index 0000000000..eb13f800ff
 +}
 diff --git a/components/adblock/android/filtering_configuration_android.cc b/components/adblock/android/filtering_configuration_android.cc
 new file mode 100644
-index 0000000000..c3f5810421
+index 0000000..45841be
 --- /dev/null
 +++ b/components/adblock/android/filtering_configuration_android.cc
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,245 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -570,13 +580,13 @@ index 0000000000..c3f5810421
 +
 +#include "components/adblock/android/filtering_configuration_android.h"
 +
++#include <algorithm>
 +#include <iterator>
 +#include <memory>
 +
 +#include "base/android/jni_android.h"
 +#include "base/android/jni_array.h"
 +#include "base/android/jni_string.h"
-+#include "base/ranges/algorithm.h"
 +#include "components/adblock/android/jni_headers/FilteringConfiguration_jni.h"
 +#include "components/adblock/content/browser/factories/subscription_service_factory.h"
 +#include "components/adblock/core/configuration/filtering_configuration.h"
@@ -602,7 +612,7 @@ index 0000000000..c3f5810421
 +    PrefService* pref_service)
 +    : subscription_service_(subscription_service),
 +      pref_service_(pref_service),
-+      java_weak_controller_(env, jcontroller.obj()) {
++      java_weak_controller_(env, jcontroller) {
 +  subscription_service_->AddObserver(this);
 +  auto* existing_configuration =
 +      subscription_service_->GetFilteringConfiguration(configuration_name);
@@ -739,8 +749,8 @@ index 0000000000..c3f5810421
 +  // For simplicity, convert GURL to std::string, pass to Java, and convert
 +  // from String to URL. Strings are easier to pass through JNI.
 +  std::vector<std::string> urls;
-+  base::ranges::transform(filtering_configuration_ptr->GetFilterLists(),
-+                          std::back_inserter(urls), &GURL::spec);
++  std::ranges::transform(filtering_configuration_ptr->GetFilterLists(),
++                         std::back_inserter(urls), &GURL::spec);
 +  return ToJavaArrayOfStrings(env, urls);
 +}
 +
@@ -769,7 +779,7 @@ index 0000000000..c3f5810421
 +    JNIEnv* env,
 +    const JavaParamRef<jobject>& jbrowser_context_handle) {
 +  std::vector<std::string> configurations;
-+  base::ranges::transform(
++  std::ranges::transform(
 +      adblock::SubscriptionServiceFactory::GetForBrowserContext(
 +          content::BrowserContextFromJavaHandle(jbrowser_context_handle))
 +          ->GetInstalledFilteringConfigurations(),
@@ -777,9 +787,28 @@ index 0000000000..c3f5810421
 +      [](adblock::FilteringConfiguration* fc) { return fc->GetName(); });
 +  return ToJavaArrayOfStrings(env, configurations);
 +}
++
++static jboolean JNI_FilteringConfiguration_IsAutoInstallEnabled(
++    JNIEnv* env,
++    const JavaParamRef<jobject>& jbrowser_context_handle) {
++  return adblock::SubscriptionServiceFactory::GetForBrowserContext(
++             content::BrowserContextFromJavaHandle(jbrowser_context_handle))
++                 ->IsAutoInstallEnabled()
++             ? JNI_TRUE
++             : JNI_FALSE;
++}
++
++static void JNI_FilteringConfiguration_SetAutoInstallEnabled(
++    JNIEnv* env,
++    jboolean j_enabled,
++    const JavaParamRef<jobject>& jbrowser_context_handle) {
++  adblock::SubscriptionServiceFactory::GetForBrowserContext(
++      content::BrowserContextFromJavaHandle(jbrowser_context_handle))
++      ->SetAutoInstallEnabled(j_enabled == JNI_TRUE);
++}
 diff --git a/components/adblock/android/filtering_configuration_android.h b/components/adblock/android/filtering_configuration_android.h
 new file mode 100644
-index 0000000000..b9a5991e4c
+index 0000000..b9a5991
 --- /dev/null
 +++ b/components/adblock/android/filtering_configuration_android.h
 @@ -0,0 +1,94 @@
@@ -879,10 +908,10 @@ index 0000000000..b9a5991e4c
 +#endif  // COMPONENTS_ADBLOCK_ANDROID_FILTERING_CONFIGURATION_ANDROID_H_
 diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/AdblockController.java b/components/adblock/android/java/src/org/chromium/components/adblock/AdblockController.java
 new file mode 100644
-index 0000000000..b79c4da9aa
+index 0000000..80d72fa
 --- /dev/null
 +++ b/components/adblock/android/java/src/org/chromium/components/adblock/AdblockController.java
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,283 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -907,6 +936,7 @@ index 0000000000..b79c4da9aa
 +import org.jni_zero.CalledByNative;
 +import org.jni_zero.NativeMethods;
 +
++import org.chromium.base.ResettersForTesting;
 +import org.chromium.base.ThreadUtils;
 +import org.chromium.base.library_loader.LibraryLoader;
 +import org.chromium.content_public.browser.BrowserContextHandle;
@@ -922,9 +952,8 @@ index 0000000000..b79c4da9aa
 + *     part also AdblockController. It lives in UI thread on the browser process.
 + */
 +@Deprecated
-+public final class AdblockController {
++public class AdblockController {
 +    private static final String TAG = AdblockController.class.getSimpleName();
-+    private ResourceClassificationNotifier mResourceClassificationNotifier;
 +    private FilteringConfiguration mFilteringConfiguration;
 +    private BrowserContextHandle mBrowserContextHandle;
 +
@@ -934,8 +963,6 @@ index 0000000000..b79c4da9aa
 +
 +    private AdblockController(BrowserContextHandle contextHandle) {
 +        mBrowserContextHandle = contextHandle;
-+        mResourceClassificationNotifier =
-+                ResourceClassificationNotifier.getInstance(mBrowserContextHandle);
 +        mFilteringConfiguration =
 +                FilteringConfiguration.createConfiguration("adblock", mBrowserContextHandle);
 +        try {
@@ -959,11 +986,18 @@ index 0000000000..b79c4da9aa
 +        return sInstance;
 +    }
 +
++    public static void setInstanceForTesting(final AdblockController adblockController) {
++        var oldValue = sInstance;
++        sInstance = adblockController;
++        ResettersForTesting.register(() -> sInstance = oldValue);
++    }
++
 +    public static class Subscription {
 +        private URL mUrl;
 +        private String mTitle;
 +        private String mVersion = "";
 +        private String[] mLanguages = {};
++        private boolean mAutoInstalled;
 +
 +        public Subscription(final URL url, final String title, final String version) {
 +            this.mUrl = url;
@@ -973,11 +1007,16 @@ index 0000000000..b79c4da9aa
 +
 +        @CalledByNative("Subscription")
 +        public Subscription(
-+                final URL url, final String title, final String version, final String[] languages) {
++                final URL url,
++                final String title,
++                final String version,
++                final String[] languages,
++                boolean autoinstalled) {
 +            this.mUrl = url;
 +            this.mTitle = title;
 +            this.mVersion = version;
 +            this.mLanguages = languages;
++            this.mAutoInstalled = autoinstalled;
 +        }
 +
 +        public String title() {
@@ -994,6 +1033,10 @@ index 0000000000..b79c4da9aa
 +
 +        public String[] languages() {
 +            return mLanguages;
++        }
++
++        public boolean autoinstalled() {
++            return mAutoInstalled;
 +        }
 +
 +        @Override
@@ -1021,6 +1064,16 @@ index 0000000000..b79c4da9aa
 +    public List<Subscription> getRecommendedSubscriptions() {
 +        return (List<Subscription>)
 +                (List<?>) Arrays.asList(AdblockControllerJni.get().getRecommendedSubscriptions());
++    }
++
++    @UiThread
++    public void setAutoInstallEnabled(boolean enable) {
++        FilteringConfiguration.setAutoInstallEnabled(enable, mBrowserContextHandle);
++    }
++
++    @UiThread
++    public boolean isAutoInstallEnabled() {
++        return FilteringConfiguration.isAutoInstallEnabled(mBrowserContextHandle);
 +    }
 +
 +    @UiThread
@@ -1142,9 +1195,37 @@ index 0000000000..b79c4da9aa
 +        Object[] getRecommendedSubscriptions();
 +    }
 +}
+diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/AdblockSwitches.java b/components/adblock/android/java/src/org/chromium/components/adblock/AdblockSwitches.java
+new file mode 100644
+index 0000000..a72029d
+--- /dev/null
++++ b/components/adblock/android/java/src/org/chromium/components/adblock/AdblockSwitches.java
+@@ -0,0 +1,22 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.components.adblock;
++
++public class AdblockSwitches {
++    public static final String DISABLE_EYEO_REQUEST_THROTTLING = "disable-eyeo-request-throttling";
++}
 diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/ContentType.java b/components/adblock/android/java/src/org/chromium/components/adblock/ContentType.java
 new file mode 100644
-index 0000000000..9117f76e88
+index 0000000..9117f76
 --- /dev/null
 +++ b/components/adblock/android/java/src/org/chromium/components/adblock/ContentType.java
 @@ -0,0 +1,61 @@
@@ -1211,10 +1292,10 @@ index 0000000000..9117f76e88
 +}
 diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/FilteringConfiguration.java b/components/adblock/android/java/src/org/chromium/components/adblock/FilteringConfiguration.java
 new file mode 100644
-index 0000000000..4174d3c626
+index 0000000..26897aa
 --- /dev/null
 +++ b/components/adblock/android/java/src/org/chromium/components/adblock/FilteringConfiguration.java
-@@ -0,0 +1,409 @@
+@@ -0,0 +1,424 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -1532,6 +1613,17 @@ index 0000000000..4174d3c626
 +        return null;
 +    }
 +
++    @UiThread
++    public static void setAutoInstallEnabled(
++            boolean enable, BrowserContextHandle browserContextHandle) {
++        FilteringConfigurationJni.get().setAutoInstallEnabled(enable, browserContextHandle);
++    }
++
++    @UiThread
++    public static boolean isAutoInstallEnabled(BrowserContextHandle browserContextHandle) {
++        return FilteringConfigurationJni.get().isAutoInstallEnabled(browserContextHandle);
++    }
++
 +    private String sanitizeSite(String site) {
 +        // |site| is raw user input. We expect it to be either a domain or a URL.
 +        try {
@@ -1619,6 +1711,10 @@ index 0000000000..4174d3c626
 +                final String configuration_name,
 +                BrowserContextHandle contextHandle);
 +
++        void setAutoInstallEnabled(boolean enable, BrowserContextHandle contextHandle);
++
++        boolean isAutoInstallEnabled(BrowserContextHandle contextHandle);
++
 +        String[] getConfigurations(BrowserContextHandle contextHandle);
 +
 +        String getAcceptableAdsUrl();
@@ -1626,7 +1722,7 @@ index 0000000000..4174d3c626
 +}
 diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/ResourceClassificationNotifier.java b/components/adblock/android/java/src/org/chromium/components/adblock/ResourceClassificationNotifier.java
 new file mode 100644
-index 0000000000..1dda611ca2
+index 0000000..1dda611
 --- /dev/null
 +++ b/components/adblock/android/java/src/org/chromium/components/adblock/ResourceClassificationNotifier.java
 @@ -0,0 +1,233 @@
@@ -1865,7 +1961,7 @@ index 0000000000..1dda611ca2
 +}
 diff --git a/components/adblock/android/java/src/org/chromium/components/adblock/ResourceFilteringCounters.java b/components/adblock/android/java/src/org/chromium/components/adblock/ResourceFilteringCounters.java
 new file mode 100644
-index 0000000000..7a0f346287
+index 0000000..bbd054e
 --- /dev/null
 +++ b/components/adblock/android/java/src/org/chromium/components/adblock/ResourceFilteringCounters.java
 @@ -0,0 +1,111 @@
@@ -1976,13 +2072,13 @@ index 0000000000..7a0f346287
 +                    + ", mContentType: "
 +                    + mContentType.getValue()
 +                    + ", mMainFrameId: "
-+                    + mMainFrameId;
++                    + mMainFrameId.frameRoutingId();
 +        }
 +    }
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/AdblockControllerTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/AdblockControllerTestBase.java
 new file mode 100644
-index 0000000000..08d6718fd6
+index 0000000..9513f78
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/AdblockControllerTestBase.java
 @@ -0,0 +1,64 @@
@@ -2010,10 +2106,10 @@ index 0000000000..08d6718fd6
 +import org.junit.Assert;
 +import org.junit.Test;
 +
++import org.chromium.base.ThreadUtils;
 +import org.chromium.base.test.util.CallbackHelper;
 +import org.chromium.base.test.util.Feature;
 +import org.chromium.base.test.util.IntegrationTest;
-+import org.chromium.content_public.browser.test.util.TestThreadUtils;
 +
 +import java.util.ArrayList;
 +import java.util.List;
@@ -2030,7 +2126,7 @@ index 0000000000..08d6718fd6
 +    @Feature({"adblock"})
 +    public void addingAllowedDomains() throws TimeoutException {
 +        final List<String> allowedDomains = new ArrayList<>();
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mAdblockController.addAllowedDomain("foobar.com");
 +                    mAdblockController.addAllowedDomain("domain.com/path/to/page.html");
@@ -2052,10 +2148,10 @@ index 0000000000..08d6718fd6
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/DefaultSettingsTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/DefaultSettingsTestBase.java
 new file mode 100644
-index 0000000000..121b62c7ec
+index 0000000..99e6e55
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/DefaultSettingsTestBase.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -2078,10 +2174,10 @@ index 0000000000..121b62c7ec
 +import org.junit.Assert;
 +import org.junit.Test;
 +
++import org.chromium.base.ThreadUtils;
 +import org.chromium.base.test.util.Feature;
 +import org.chromium.base.test.util.IntegrationTest;
 +import org.chromium.content_public.browser.BrowserContextHandle;
-+import org.chromium.content_public.browser.test.util.TestThreadUtils;
 +
 +import java.net.MalformedURLException;
 +import java.net.URL;
@@ -2094,7 +2190,7 @@ index 0000000000..121b62c7ec
 +    @IntegrationTest
 +    @Feature({"adblock"})
 +    public void checkAdblockEnabledByDefault() {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    FilteringConfiguration adblockConfiguration =
 +                            FilteringConfiguration.createConfiguration(
@@ -2110,7 +2206,7 @@ index 0000000000..121b62c7ec
 +    @IntegrationTest
 +    @Feature({"adblock"})
 +    public void checkAcceptableAdsEnabledByDefault() {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    FilteringConfiguration adblockConfiguration =
 +                            FilteringConfiguration.createConfiguration(
@@ -2123,6 +2219,7 @@ index 0000000000..121b62c7ec
 +                        URL acceptableAdsUrl = new URL(adblockConfiguration.getAcceptableAdsUrl());
 +                        Assert.assertTrue(filterLists.contains(acceptableAdsUrl));
 +                    } catch (MalformedURLException e) {
++                        e.printStackTrace();
 +                        Assert.fail();
 +                    }
 +                });
@@ -2130,7 +2227,7 @@ index 0000000000..121b62c7ec
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/FilteringConfigurationTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/FilteringConfigurationTestBase.java
 new file mode 100644
-index 0000000000..e823b7a7f8
+index 0000000..981a320
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/FilteringConfigurationTestBase.java
 @@ -0,0 +1,421 @@
@@ -2159,11 +2256,11 @@ index 0000000000..e823b7a7f8
 +import org.junit.Assert;
 +import org.junit.Test;
 +
++import org.chromium.base.ThreadUtils;
 +import org.chromium.base.test.util.CallbackHelper;
 +import org.chromium.base.test.util.Feature;
 +import org.chromium.base.test.util.IntegrationTest;
 +import org.chromium.content_public.browser.BrowserContextHandle;
-+import org.chromium.content_public.browser.test.util.TestThreadUtils;
 +import org.chromium.net.test.EmbeddedTestServer;
 +
 +import java.net.URL;
@@ -2188,7 +2285,7 @@ index 0000000000..e823b7a7f8
 +        mHelper = helper;
 +        mTestServer = EmbeddedTestServer.createAndStartServer(InstrumentationRegistry.getContext());
 +        mTestUrl = mTestServer.getURLWithHostName("test.org", filePath);
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA =
 +                            FilteringConfiguration.createConfiguration("a", getBrowserContext());
@@ -2245,7 +2342,7 @@ index 0000000000..e823b7a7f8
 +    public void addingAllowedDomains() throws Exception {
 +        final List<String> allowedDomainsA = new ArrayList<>();
 +        final List<String> allowedDomainsB = new ArrayList<>();
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addAllowedDomain("foobar.com");
 +                    mConfigurationA.addAllowedDomain("domain.com/path/to/page.html");
@@ -2281,7 +2378,7 @@ index 0000000000..e823b7a7f8
 +    public void addingCustomFilters() throws Exception {
 +        final List<String> customFiltersA = new ArrayList<>();
 +        final List<String> customFiltersB = new ArrayList<>();
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addCustomFilter("foobar.com");
 +                    mConfigurationA.addCustomFilter("foobar.com");
@@ -2318,7 +2415,7 @@ index 0000000000..e823b7a7f8
 +        final URL filterList2 = new URL("http://filters.com/list2.txt");
 +        final List<URL> filterListsA = new ArrayList<URL>();
 +        final List<URL> filterListsB = new ArrayList<URL>();
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addFilterList(filterList1);
 +                    mConfigurationA.addFilterList(filterList2);
@@ -2352,7 +2449,7 @@ index 0000000000..e823b7a7f8
 +        final URL filterList2 = new URL("http://filters.com/list2.txt");
 +        final List<URL> filterListsA = new ArrayList<URL>();
 +        final List<URL> filterListsB = new ArrayList<URL>();
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    // Create a new FilteringConfiguration with a name of one that
 +                    // already exist.
@@ -2390,7 +2487,7 @@ index 0000000000..e823b7a7f8
 +        Assert.assertFalse(observer.mOnCustomFiltersChanged);
 +        Assert.assertFalse(observer.mOnFilterListsChanged);
 +
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    // We'll create an aliased instance which will receive notifications triggered
 +                    // by
@@ -2418,7 +2515,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void resourceBlockedByFilter() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addCustomFilter("resource.png");
 +                    mCallbackHelper.notifyCalled();
@@ -2433,7 +2530,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void resourceAllowedByFilter() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addCustomFilter("resource.png");
 +                    // Allowing filter for the mocked test.org domain that mTestServer hosts.
@@ -2450,7 +2547,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void resourceAllowedByAllowedDomain() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mConfigurationA.addCustomFilter("resource.png");
 +                    mConfigurationA.addAllowedDomain("test.org");
@@ -2466,7 +2563,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void resourceBlockedBySecondConfiguration() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    // ConfigurationA allows the resource.
 +                    // Allowing rules take precedence within a FilteringConfiguration.
@@ -2496,7 +2593,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void createAndRemoveConfiguration() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    // Check initial state.
 +                    FilteringConfiguration.removeConfiguration("adblock", getBrowserContext());
@@ -2533,7 +2630,7 @@ index 0000000000..e823b7a7f8
 +    @LargeTest
 +    @Feature({"adblock"})
 +    public void cannotUseRemovedConfiguration() throws Exception {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    FilteringConfiguration configurationC =
 +                            FilteringConfiguration.createConfiguration("c", getBrowserContext());
@@ -2557,7 +2654,7 @@ index 0000000000..e823b7a7f8
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCircumventionTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCircumventionTestBase.java
 new file mode 100644
-index 0000000000..41d1130480
+index 0000000..41d1130
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCircumventionTestBase.java
 @@ -0,0 +1,65 @@
@@ -2628,7 +2725,7 @@ index 0000000000..41d1130480
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCspTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCspTestBase.java
 new file mode 100644
-index 0000000000..29976751a5
+index 0000000..2997675
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesCspTestBase.java
 @@ -0,0 +1,86 @@
@@ -2720,7 +2817,7 @@ index 0000000000..29976751a5
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuInvTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuInvTestBase.java
 new file mode 100644
-index 0000000000..70b1fe11d1
+index 0000000..70b1fe1
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuInvTestBase.java
 @@ -0,0 +1,116 @@
@@ -2842,7 +2939,7 @@ index 0000000000..70b1fe11d1
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuTestBase.java
 new file mode 100644
-index 0000000000..4d3e9be936
+index 0000000..4d3e9be
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideEmuTestBase.java
 @@ -0,0 +1,161 @@
@@ -3009,7 +3106,7 @@ index 0000000000..4d3e9be936
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideTestBase.java
 new file mode 100644
-index 0000000000..a5d1921459
+index 0000000..a5d1921
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesElemhideTestBase.java
 @@ -0,0 +1,159 @@
@@ -3174,7 +3271,7 @@ index 0000000000..a5d1921459
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesExceptionTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesExceptionTestBase.java
 new file mode 100644
-index 0000000000..27c2146696
+index 0000000..27c2146
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesExceptionTestBase.java
 @@ -0,0 +1,190 @@
@@ -3370,7 +3467,7 @@ index 0000000000..27c2146696
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesFilterTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesFilterTestBase.java
 new file mode 100644
-index 0000000000..4b63c12561
+index 0000000..4b63c12
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesFilterTestBase.java
 @@ -0,0 +1,277 @@
@@ -3653,7 +3750,7 @@ index 0000000000..4b63c12561
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHeaderFilterTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHeaderFilterTestBase.java
 new file mode 100644
-index 0000000000..7858332dd1
+index 0000000..7858332
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHeaderFilterTestBase.java
 @@ -0,0 +1,102 @@
@@ -3761,7 +3858,7 @@ index 0000000000..7858332dd1
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHelperBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHelperBase.java
 new file mode 100644
-index 0000000000..521f453802
+index 0000000..9f315f7
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesHelperBase.java
 @@ -0,0 +1,230 @@
@@ -3787,10 +3884,10 @@ index 0000000000..521f453802
 +import org.junit.Assert;
 +
 +import org.chromium.base.Log;
++import org.chromium.base.ThreadUtils;
 +import org.chromium.base.test.util.CallbackHelper;
 +import org.chromium.content_public.browser.BrowserContextHandle;
 +import org.chromium.content_public.browser.WebContents;
-+import org.chromium.content_public.browser.test.util.TestThreadUtils;
 +
 +import java.net.MalformedURLException;
 +import java.net.URL;
@@ -3843,7 +3940,7 @@ index 0000000000..521f453802
 +    }
 +
 +    public void setUp() {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mResourceClassificationNotifier =
 +                            ResourceClassificationNotifier.getInstance(getBrowserContext());
@@ -3882,7 +3979,7 @@ index 0000000000..521f453802
 +        } catch (MalformedURLException ignored) {
 +        }
 +        Assert.assertNotNull("Test subscription url", mTestSubscriptionUrl);
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mAdblockFilteringConfiguration.addFilterList(mTestSubscriptionUrl);
 +                });
@@ -3895,7 +3992,7 @@ index 0000000000..521f453802
 +    }
 +
 +    public void addCustomFilter(final String filter) {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    mAdblockFilteringConfiguration.addCustomFilter(filter);
 +                });
@@ -3908,7 +4005,7 @@ index 0000000000..521f453802
 +    }
 +
 +    public void tearDown() {
-+        TestThreadUtils.runOnUiThreadBlocking(
++        ThreadUtils.runOnUiThreadBlocking(
 +                () -> {
 +                    if (mAdblockFilteringConfiguration != null) {
 +                        mAdblockFilteringConfiguration.removeSubscriptionUpdateObserver(
@@ -3997,7 +4094,7 @@ index 0000000000..521f453802
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesInlineCssTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesInlineCssTestBase.java
 new file mode 100644
-index 0000000000..f5fa93e60d
+index 0000000..f5fa93e
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesInlineCssTestBase.java
 @@ -0,0 +1,94 @@
@@ -4097,7 +4194,7 @@ index 0000000000..f5fa93e60d
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRemoveTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRemoveTestBase.java
 new file mode 100644
-index 0000000000..112b04178a
+index 0000000..112b041
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRemoveTestBase.java
 @@ -0,0 +1,94 @@
@@ -4197,7 +4294,7 @@ index 0000000000..112b04178a
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRewriteTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRewriteTestBase.java
 new file mode 100644
-index 0000000000..5f3a8b15fc
+index 0000000..5f3a8b1
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesRewriteTestBase.java
 @@ -0,0 +1,175 @@
@@ -4376,9 +4473,86 @@ index 0000000000..5f3a8b15fc
 +        TestVerificationUtils.verifyCondition(mHelper, js_verification_code);
 +    }
 +}
+diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesServiceWorkersTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesServiceWorkersTestBase.java
+new file mode 100644
+index 0000000..50c695b
+--- /dev/null
++++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesServiceWorkersTestBase.java
+@@ -0,0 +1,71 @@
++/*
++ * This file is part of eyeo Chromium SDK,
++ * Copyright (C) 2006-present eyeo GmbH
++ *
++ * eyeo Chromium SDK is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 3 as
++ * published by the Free Software Foundation.
++ *
++ * eyeo Chromium SDK is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++package org.chromium.components.adblock;
++
++import androidx.test.filters.LargeTest;
++
++import org.junit.Test;
++
++import org.chromium.base.test.util.Feature;
++
++public abstract class TestPagesServiceWorkersTestBase {
++    public static final String SERVICE_WORKERS_TEST_URL =
++            TestPagesHelperBase.TESTPAGES_TESTCASES_ROOT + "service-worker/";
++    private TestPagesHelperBase mHelper;
++
++    protected void setUp(TestPagesHelperBase helper) {
++        mHelper = helper;
++        mHelper.addFilterList(TestPagesHelperBase.TESTPAGES_SUBSCRIPTION);
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testBlockingWorker() throws Exception {
++        mHelper.loadUrlWaitForContent(SERVICE_WORKERS_TEST_URL + "worker-itself");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 1, "div#blocked-target > div[data-expectedresult='pass']");
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testAllowingWorker() throws Exception {
++        mHelper.loadUrlWaitForContent(SERVICE_WORKERS_TEST_URL + "worker-itself");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 1, "div#allowed-target > div[data-expectedresult='pass']");
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testBlockingFromWorker() throws Exception {
++        mHelper.loadUrlWaitForContent(SERVICE_WORKERS_TEST_URL + "worker-subresource");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 1, "div#blocked-target > div[data-expectedresult='pass']");
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testAllowingFromWorker() throws Exception {
++        mHelper.loadUrlWaitForContent(SERVICE_WORKERS_TEST_URL + "worker-subresource");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 1, "div#allowed-target > div[data-expectedresult='pass']");
++    }
++}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSiteKeyTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSiteKeyTestBase.java
 new file mode 100644
-index 0000000000..89ffea6969
+index 0000000..89ffea6
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSiteKeyTestBase.java
 @@ -0,0 +1,51 @@
@@ -4435,10 +4609,10 @@ index 0000000000..89ffea6969
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSnippetsTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSnippetsTestBase.java
 new file mode 100644
-index 0000000000..7b78da1467
+index 0000000..5bb85d0
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesSnippetsTestBase.java
-@@ -0,0 +1,538 @@
+@@ -0,0 +1,560 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -4462,6 +4636,7 @@ index 0000000000..7b78da1467
 +
 +import org.junit.Test;
 +
++import org.chromium.base.test.util.DisabledTest;
 +import org.chromium.base.test.util.Feature;
 +
 +public abstract class TestPagesSnippetsTestBase {
@@ -4976,10 +5151,31 @@ index 0000000000..7b78da1467
 +        TestVerificationUtils.verifyDisplayedCount(
 +                mHelper, 2, "div#other-target > div[data-expectedresult='pass']");
 +    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    public void testSimulateMouseEvent() throws Exception {
++        mHelper.loadUrlWaitForContent(
++                TestPagesHelperBase.SNIPPETS_TESTPAGES_TESTCASES_ROOT + "simulate-mouse-event");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 0, "div#simulate-mouse-event-area > div[data-expectedresult='fail']");
++    }
++
++    @Test
++    @LargeTest
++    @Feature({"adblock"})
++    @DisabledTest(message = "DPD-2832")
++    public void testSkipVideo() throws Exception {
++        mHelper.loadUrlWaitForContent(
++                TestPagesHelperBase.SNIPPETS_TESTPAGES_TESTCASES_ROOT + "skip-video");
++        TestVerificationUtils.verifyDisplayedCount(
++                mHelper, 0, "div#skip-video-area > div[data-expectedresult='fail']");
++    }
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWebsocketTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWebsocketTestBase.java
 new file mode 100644
-index 0000000000..a71cdcfbbc
+index 0000000..a71cdcf
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWebsocketTestBase.java
 @@ -0,0 +1,54 @@
@@ -5039,7 +5235,7 @@ index 0000000000..a71cdcfbbc
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWildcardDomainTestBase.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWildcardDomainTestBase.java
 new file mode 100644
-index 0000000000..29f9b78be7
+index 0000000..29f9b78
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestPagesWildcardDomainTestBase.java
 @@ -0,0 +1,116 @@
@@ -5161,10 +5357,10 @@ index 0000000000..29f9b78be7
 +}
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestResourceFilteringObserver.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestResourceFilteringObserver.java
 new file mode 100644
-index 0000000000..d0b0005fc1
+index 0000000..674c562
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestResourceFilteringObserver.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,180 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -5345,13 +5541,12 @@ index 0000000000..d0b0005fc1
 +    Set<String> expectedAllowed;
 +    Set<String> expectedBlocked;
 +}
-+;
 diff --git a/components/adblock/android/javatests/src/org/chromium/components/adblock/TestVerificationUtils.java b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestVerificationUtils.java
 new file mode 100644
-index 0000000000..1d61bb2b34
+index 0000000..ec7a830
 --- /dev/null
 +++ b/components/adblock/android/javatests/src/org/chromium/components/adblock/TestVerificationUtils.java
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,220 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -5415,13 +5610,6 @@ index 0000000000..1d61bb2b34
 +                    + "  return count;"
 +                    + "}";
 +
-+    private static final String WAIT_FOR_COUNT_FUNCTION_WRAPPER =
-+            "(function () {"
-+                    + "%s\n" // matches() definition placeholder
-+                    + "%s\n" // countElements() definition placeholder
-+                    + "%s\n" // WAIT_FUNCTION placeholder which calls countElements() as a predicate
-+                    + "}());";
-+
 +    // Poll every 100 ms until condition is met or 3 seconds timeout occurs
 +    // Internal timeout of JavaScriptUtils.runJavascriptWithAsyncResult() is 5 seconds
 +    // so our wait timeout needs to be shorter.
@@ -5462,10 +5650,8 @@ index 0000000000..1d61bb2b34
 +        final String waitFunction = String.format(WAIT_FUNCTION, predicate);
 +        final String js =
 +                String.format(
-+                        WAIT_FOR_COUNT_FUNCTION_WRAPPER,
-+                        matchesFunction,
-+                        COUNT_ELEMENT_FUNCTION,
-+                        waitFunction);
++                        "(function () {%s\n%s\n%s\n}());",
++                        matchesFunction, COUNT_ELEMENT_FUNCTION, waitFunction);
 +        final String result =
 +                JavaScriptUtils.runJavascriptWithAsyncResult(helper.getWebContents(), js);
 +        Assert.assertEquals(STATUS_OK, result);
@@ -5583,10 +5769,10 @@ index 0000000000..1d61bb2b34
 +}
 diff --git a/components/adblock/android/resource_classification_notifier_android.cc b/components/adblock/android/resource_classification_notifier_android.cc
 new file mode 100644
-index 0000000000..bd1246b3c2
+index 0000000..a73342d
 --- /dev/null
 +++ b/components/adblock/android/resource_classification_notifier_android.cc
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,163 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -5627,10 +5813,10 @@ index 0000000000..bd1246b3c2
 +
 +ResourceClassificationNotifierAndroid::ResourceClassificationNotifierAndroid(
 +    JNIEnv* env,
-+    const base::android::JavaParamRef<jobject>& jcontroller,
++    const JavaParamRef<jobject>& jcontroller,
 +    ResourceClassificationRunner* classification_runner)
 +    : classification_runner_(classification_runner),
-+      java_weak_controller_(env, jcontroller.obj()) {
++      java_weak_controller_(env, jcontroller) {
 +  if (classification_runner_) {
 +    classification_runner_->AddObserver(this);
 +  }
@@ -5669,11 +5855,12 @@ index 0000000000..bd1246b3c2
 +        ConvertUTF8ToJavaString(env, subscription.spec());
 +    ScopedJavaLocalRef<jstring> j_configuration =
 +        ConvertUTF8ToJavaString(env, configuration_name);
++    const content::GlobalRenderFrameHostId rfh_id =
++        render_frame_host->GetGlobalId();
 +    Java_ResourceClassificationNotifier_requestMatchedCallback(
 +        env, java_controller, j_url, was_blocked, j_parents, j_subscription,
-+        j_configuration, static_cast<int>(content_type),
-+        render_frame_host->GetMainFrame()->GetProcess()->GetID(),
-+        render_frame_host->GetMainFrame()->GetRoutingID());
++        j_configuration, static_cast<int>(content_type), rfh_id.child_id,
++        rfh_id.frame_routing_id);
 +  }
 +}
 +
@@ -5694,10 +5881,11 @@ index 0000000000..bd1246b3c2
 +        ConvertUTF8ToJavaString(env, subscription.spec());
 +    ScopedJavaLocalRef<jstring> j_configuration =
 +        ConvertUTF8ToJavaString(env, configuration_name);
++    const content::GlobalRenderFrameHostId rfh_id =
++        render_frame_host->GetGlobalId();
 +    Java_ResourceClassificationNotifier_pageAllowedCallback(
 +        env, java_controller, j_url, j_subscription, j_configuration,
-+        render_frame_host->GetMainFrame()->GetProcess()->GetID(),
-+        render_frame_host->GetMainFrame()->GetRoutingID());
++        rfh_id.child_id, rfh_id.frame_routing_id);
 +  }
 +}
 +
@@ -5726,11 +5914,11 @@ index 0000000000..bd1246b3c2
 +        ConvertUTF8ToJavaString(env, subscription.spec());
 +    ScopedJavaLocalRef<jstring> j_configuration =
 +        ConvertUTF8ToJavaString(env, configuration_name);
++    const content::GlobalRenderFrameHostId rfh_id =
++        render_frame_host->GetGlobalId();
 +    Java_ResourceClassificationNotifier_popupMatchedCallback(
 +        env, java_controller, j_url, was_blocked, j_opener, j_subscription,
-+        j_configuration,
-+        render_frame_host->GetMainFrame()->GetProcess()->GetID(),
-+        render_frame_host->GetMainFrame()->GetRoutingID());
++        j_configuration, rfh_id.child_id, rfh_id.frame_routing_id);
 +  }
 +}
 +
@@ -5750,7 +5938,7 @@ index 0000000000..bd1246b3c2
 +}
 diff --git a/components/adblock/android/resource_classification_notifier_android.h b/components/adblock/android/resource_classification_notifier_android.h
 new file mode 100644
-index 0000000000..b72e4eb413
+index 0000000..b72e4eb
 --- /dev/null
 +++ b/components/adblock/android/resource_classification_notifier_android.h
 @@ -0,0 +1,72 @@
@@ -5826,6 +6014,3 @@ index 0000000000..b72e4eb413
 +}  // namespace adblock
 +
 +#endif  // COMPONENTS_ADBLOCK_ANDROID_RESOURCE_CLASSIFICATION_NOTIFIER_ANDROID_H_
--- 
-2.43.2
-

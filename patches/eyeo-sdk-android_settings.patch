@@ -1,18 +1,19 @@
-From e87c06d0018c3c79bd86720e692c8dd539daf490 Mon Sep 17 00:00:00 2001
+From ccfcf44c0fd4770291f5356f325c4dbe867d030e Mon Sep 17 00:00:00 2001
 From: chromium-sdk <project_26591639_bot@noreply.gitlab.com>
-Date: Thu, 30 May 2024 07:40:10 +0200
+Date: Thu, 10 Apr 2025 12:31:06 +0200
 Subject: [PATCH] eyeo Browser Ad filtering Solution: Android Settings UI
  Module
 
-Based on Chromium 126.0.6478.8
+Based on Chromium 135.0.7049.38
 
 Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API Module
 ---
  chrome/android/BUILD.gn                       |   8 +
  .../android/java/res/xml/main_preferences.xml |   8 +
- chrome/browser/adblock/android/BUILD.gn       |  80 ++++++
+ .../java/res/xml/main_preferences_legacy.xml  |   8 +
+ chrome/browser/adblock/android/BUILD.gn       |  85 ++++++
  chrome/browser/adblock/android/README.md      |  13 +
- .../adblock/android/adblock_strings.grd       | 238 ++++++++++++++++++
+ .../adblock/android/adblock_strings.grd       | 244 ++++++++++++++++++
  .../fragment_adblock_custom_item_add.png      | Bin 0 -> 490 bytes
  .../fragment_adblock_custom_item_remove.png   | Bin 0 -> 296 bytes
  .../fragment_adblock_custom_item_add.png      | Bin 0 -> 321 bytes
@@ -33,16 +34,16 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API 
  .../layout/adblock_custom_item_settings.xml   |  65 +++++
  .../layout/adblock_filter_lists_list_item.xml |  36 +++
  .../java/res/xml/adblock_more_options.xml     |  34 +++
- .../java/res/xml/adblock_preferences.xml      |  56 +++++
+ .../java/res/xml/adblock_preferences.xml      |  63 +++++
  .../AdblockAllowedDomainsFragment.java        |  79 ++++++
  .../AdblockCustomFilterListsFragment.java     | 125 +++++++++
  .../AdblockCustomFiltersFragment.java         |  80 ++++++
  .../settings/AdblockCustomItemFragment.java   | 174 +++++++++++++
- .../settings/AdblockFilterListsAdapter.java   | 113 +++++++++
- .../settings/AdblockFilterListsFragment.java  |  57 +++++
+ .../settings/AdblockFilterListsAdapter.java   | 112 ++++++++
+ .../settings/AdblockFilterListsFragment.java  |  57 ++++
  .../settings/AdblockMoreOptionsFragment.java  |  34 +++
- .../settings/AdblockSettingsFragment.java     | 147 +++++++++++
- .../adblock/AdblockFilterFragmentTest.java    |  64 +++++
+ .../settings/AdblockSettingsFragment.java     | 162 ++++++++++++
+ .../adblock/AdblockFilterFragmentTest.java    | 129 +++++++++
  .../translations/adblock_strings_af.xtb       |   4 +
  .../translations/adblock_strings_am.xtb       |  13 +
  .../translations/adblock_strings_ar.xtb       |  13 +
@@ -123,7 +124,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API 
  .../translations/adblock_strings_zh-HK.xtb    |   4 +
  .../translations/adblock_strings_zh-TW.xtb    |  13 +
  .../translations/adblock_strings_zu.xtb       |   4 +
- 115 files changed, 2252 insertions(+)
+ 116 files changed, 2357 insertions(+)
  create mode 100644 chrome/browser/adblock/android/README.md
  create mode 100644 chrome/browser/adblock/android/adblock_strings.grd
  create mode 100644 chrome/browser/adblock/android/java/res/drawable-hdpi/fragment_adblock_custom_item_add.png
@@ -238,11 +239,11 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API 
  create mode 100644 chrome/browser/adblock/android/translations/adblock_strings_zu.xtb
 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
-index 14bcedccc3..1486f60bf3 100644
+index f4851de..b482c20 100644
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -279,6 +279,10 @@ if (current_toolchain == default_toolchain) {
-       deps += [ "//components/plus_addresses/android:java_resources" ]
+@@ -288,6 +288,10 @@ if (current_toolchain == default_toolchain) {
+       deps += [ "//chrome/browser:screen_capture_java_resources" ]
      }
  
 +    ### Android UI module start
@@ -251,9 +252,9 @@ index 14bcedccc3..1486f60bf3 100644
 +    ### Android UI module end
    }
  
-   android_library("app_hooks_java") {
-@@ -737,6 +741,10 @@ if (current_toolchain == default_toolchain) {
-       "//url/mojom:url_mojom_gurl_java",
+   android_resources("java_overlay_resources") {
+@@ -772,6 +776,10 @@ if (current_toolchain == default_toolchain) {
+       "//url/mojom:url_mojom_origin_java",
      ]
  
 +    ### Android UI module start
@@ -264,7 +265,7 @@ index 14bcedccc3..1486f60bf3 100644
      deps += feed_deps
  
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
-index 2a3ff48b52..3be04aa935 100644
+index f032c32..65efe16 100644
 --- a/chrome/android/java/res/xml/main_preferences.xml
 +++ b/chrome/android/java/res/xml/main_preferences.xml
 @@ -3,6 +3,9 @@
@@ -276,39 +277,69 @@ index 2a3ff48b52..3be04aa935 100644
 +Use of this source code is governed by the GPLv3 that can be found in the components/adblock/LICENSE file.
  -->
  
- <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-@@ -122,6 +125,11 @@ found in the LICENSE file.
-         android:key="accessibility"
-         android:order="22"
-         android:title="@string/prefs_accessibility"/>
+ <!-- The main_preferences file will be reordered with the upcoming autofill
+@@ -95,6 +98,11 @@ for the previous order (main_preferences_legacy). -->
+         android:key="autofill_options"
+         android:order="16"
+         android:title="@string/autofill_options_title" />
++    <Preference
++        android:fragment="org.chromium.chrome.browser.adblock.settings.AdblockSettingsFragment"
++        android:key="adblock"
++        android:order="17"
++        android:title="@string/adblock_settings_title" />
+ 
+     <PreferenceCategory
+         android:key="advanced_section"
+diff --git a/chrome/android/java/res/xml/main_preferences_legacy.xml b/chrome/android/java/res/xml/main_preferences_legacy.xml
+index a048f0a..d6d3aa5 100644
+--- a/chrome/android/java/res/xml/main_preferences_legacy.xml
++++ b/chrome/android/java/res/xml/main_preferences_legacy.xml
+@@ -3,6 +3,9 @@
+ Copyright 2024 The Chromium Authors
+ Use of this source code is governed by a BSD-style license that can be
+ found in the LICENSE file.
++
++This source code is a part of eyeo Chromium SDK.
++Use of this source code is governed by the GPLv3 that can be found in the components/adblock/LICENSE file.
+ -->
+ 
+ <!-- The main_preferences file will be reordered with the upcoming autofill
+@@ -105,6 +108,11 @@ with the new order (main_preferences). -->
+         android:key="ui_theme"
+         android:order="18"
+         android:title="@string/theme_settings" />
 +    <Preference
 +        android:fragment="org.chromium.chrome.browser.adblock.settings.AdblockSettingsFragment"
 +        android:key="adblock"
 +        android:order="18"
 +        android:title="@string/adblock_settings_title" />
-     <Preference
-         android:fragment="org.chromium.components.browser_ui.site_settings.SiteSettings"
-         android:key="content_settings"
+ 
+     <PreferenceCategory
+         android:key="advanced_section"
 diff --git a/chrome/browser/adblock/android/BUILD.gn b/chrome/browser/adblock/android/BUILD.gn
-index d44d630e28..48a76eb0d8 100644
+index 3772fad..7623028 100644
 --- a/chrome/browser/adblock/android/BUILD.gn
 +++ b/chrome/browser/adblock/android/BUILD.gn
-@@ -42,6 +42,14 @@ android_library("adblock_java_tests") {
-     "javatests/src/org/chromium/chrome/browser/adblock/TestPagesWildcardDomainTest.java",
-   ]
+@@ -45,6 +45,18 @@ android_library("adblock_java_tests") {
+ 
+   deps = []
  
 +  ### Android UI module start
 +  sources += [
 +    "javatests/src/org/chromium/chrome/browser/adblock/AdblockFilterFragmentTest.java",
-+    "javatests/src/org/chromium/chrome/browser/adblock/AdblockPopupInfoBarTest.java",
 +    "javatests/src/org/chromium/chrome/browser/adblock/AdblockPopupMessageTest.java",
++  ]
++
++  deps += [
++    "//components/messages/android:java",
++    "//third_party/mockito:mockito_java",
 +  ]
 +
 +  ### Android UI module end
  
-   deps = [
+   deps += [
      "//base:base_java",
-@@ -73,5 +81,77 @@ android_library("adblock_java_tests") {
+@@ -76,4 +88,77 @@ android_library("adblock_java_tests") {
      "//url:gurl_java",
    ]
  
@@ -348,8 +379,8 @@ index d44d630e28..48a76eb0d8 100644
 +  ]
 +
 +  resources_package = "org.chromium.chrome.browser.adblock"
- }
- 
++}
++
 +android_resources("java_ui_resources") {
 +  sources = [
 +    "java/res/drawable-hdpi/fragment_adblock_custom_item_add.png",
@@ -384,11 +415,11 @@ index d44d630e28..48a76eb0d8 100644
 +            process_file_template(
 +                android_bundle_locales_as_resources,
 +                [ "values-{{source_name_part}}/adblock_strings.xml" ])
-+}
+ }
 +### Android UI module end
 diff --git a/chrome/browser/adblock/android/README.md b/chrome/browser/adblock/android/README.md
 new file mode 100644
-index 0000000000..faaa3ec773
+index 0000000..faaa3ec
 --- /dev/null
 +++ b/chrome/browser/adblock/android/README.md
 @@ -0,0 +1,13 @@
@@ -407,10 +438,10 @@ index 0000000000..faaa3ec773
 +in [xtb files](translations) (`translation id` value).
 diff --git a/chrome/browser/adblock/android/adblock_strings.grd b/chrome/browser/adblock/android/adblock_strings.grd
 new file mode 100644
-index 0000000000..9fa21e3b88
+index 0000000..38fe51d
 --- /dev/null
 +++ b/chrome/browser/adblock/android/adblock_strings.grd
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,244 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!--
 +  This file is part of eyeo Chromium SDK,
@@ -428,7 +459,7 @@ index 0000000000..9fa21e3b88
 +  You should have received a copy of the GNU General Public License
 +  along with eyeo Chromium SDK.  If not, see <http://www.gnu.org/licenses/>.
 +-->
-+<grit current_release="1" latest_public_release="0" output_all_resource_defines="false">
++<grit current_release="1" latest_public_release="0">
 +  <outputs>
 +    <output filename="values-af/adblock_strings.xml" lang="af" type="android" />
 +    <output filename="values-am/adblock_strings.xml" lang="am" type="android" />
@@ -615,6 +646,12 @@ index 0000000000..9fa21e3b88
 +      </message>
 +      <message name="IDS_FRAGMENT_ADBLOCK_SETTINGS_AA_ENABLED_SUMMARY" desc="Summary of SwitchPreference to enable/disable Acceptable Ads">
 +        Acceptable ads are non-annoying ads that comply with a strict ad standard. They help generate revenue for content creators and do not interfere with the content you are viewing. This feature is turned on by default, but you can turn it off at any time.
++      </message>
++      <message name="IDS_FRAGMENT_ADBLOCK_SETTINGS_AUTO_INSTALL_ENABLED_TITLE" desc="Title of SwitchPreference to enable/disable Filter lists auto install">
++        Filter lists auto install
++      </message>
++      <message name="IDS_FRAGMENT_ADBLOCK_SETTINGS_AUTO_INSTALL_ENABLED_SUMMARY" desc="Summary of SwitchPreference to enable/disable Filter lists auto install">
++        Allow auto adjustments of filter lists collection, based on your geolocation, to provide the best ad-filtering experience.
 +      </message>
 +      <message name="IDS_FRAGMENT_ADBLOCK_SETTINGS_ALLOWED_DOMAINS_TITLE" desc="Title of Preference to configure allowed domains">
 +        Allowlist
@@ -1041,7 +1078,7 @@ HcmV?d00001
 
 diff --git a/chrome/browser/adblock/android/java/res/layout/adblock_custom_item.xml b/chrome/browser/adblock/android/java/res/layout/adblock_custom_item.xml
 new file mode 100644
-index 0000000000..da2732f3be
+index 0000000..da2732f
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/res/layout/adblock_custom_item.xml
 @@ -0,0 +1,50 @@
@@ -1097,7 +1134,7 @@ index 0000000000..da2732f3be
 +</LinearLayout>
 diff --git a/chrome/browser/adblock/android/java/res/layout/adblock_custom_item_settings.xml b/chrome/browser/adblock/android/java/res/layout/adblock_custom_item_settings.xml
 new file mode 100644
-index 0000000000..36ea557542
+index 0000000..36ea557
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/res/layout/adblock_custom_item_settings.xml
 @@ -0,0 +1,65 @@
@@ -1168,7 +1205,7 @@ index 0000000000..36ea557542
 +</LinearLayout>
 diff --git a/chrome/browser/adblock/android/java/res/layout/adblock_filter_lists_list_item.xml b/chrome/browser/adblock/android/java/res/layout/adblock_filter_lists_list_item.xml
 new file mode 100644
-index 0000000000..91795715b1
+index 0000000..9179571
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/res/layout/adblock_filter_lists_list_item.xml
 @@ -0,0 +1,36 @@
@@ -1210,7 +1247,7 @@ index 0000000000..91795715b1
 +</LinearLayout>
 diff --git a/chrome/browser/adblock/android/java/res/xml/adblock_more_options.xml b/chrome/browser/adblock/android/java/res/xml/adblock_more_options.xml
 new file mode 100644
-index 0000000000..314b3bce61
+index 0000000..314b3bc
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/res/xml/adblock_more_options.xml
 @@ -0,0 +1,34 @@
@@ -1250,10 +1287,10 @@ index 0000000000..314b3bce61
 +</androidx.preference.PreferenceScreen>
 diff --git a/chrome/browser/adblock/android/java/res/xml/adblock_preferences.xml b/chrome/browser/adblock/android/java/res/xml/adblock_preferences.xml
 new file mode 100644
-index 0000000000..f0f0a602dd
+index 0000000..dd31643
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/res/xml/adblock_preferences.xml
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,63 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +<!--
 +  This file is part of eyeo Chromium SDK,
@@ -1295,6 +1332,13 @@ index 0000000000..f0f0a602dd
 +        app:iconSpaceReserved="false"
 +        android:summary="@string/fragment_adblock_settings_aa_enabled_summary" />
 +
++    <!-- AutoInstall: enabled/disabled -->
++    <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++        android:key="fragment_adblock_settings_auto_install_enabled_key"
++        android:title="@string/fragment_adblock_settings_auto_install_enabled_title"
++        app:iconSpaceReserved="false"
++        android:summary="@string/fragment_adblock_settings_auto_install_enabled_summary" />
++
 +    <!-- Allowed domains -->
 +    <androidx.preference.Preference
 +        android:fragment="org.chromium.chrome.browser.adblock.settings.AdblockAllowedDomainsFragment"
@@ -1312,7 +1356,7 @@ index 0000000000..f0f0a602dd
 +</androidx.preference.PreferenceScreen>
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockAllowedDomainsFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockAllowedDomainsFragment.java
 new file mode 100644
-index 0000000000..faf59d9c6a
+index 0000000..faf59d9
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockAllowedDomainsFragment.java
 @@ -0,0 +1,79 @@
@@ -1397,7 +1441,7 @@ index 0000000000..faf59d9c6a
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFilterListsFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFilterListsFragment.java
 new file mode 100644
-index 0000000000..70a7d6b422
+index 0000000..70a7d6b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFilterListsFragment.java
 @@ -0,0 +1,125 @@
@@ -1528,7 +1572,7 @@ index 0000000000..70a7d6b422
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFiltersFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFiltersFragment.java
 new file mode 100644
-index 0000000000..90daae9cba
+index 0000000..90daae9
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomFiltersFragment.java
 @@ -0,0 +1,80 @@
@@ -1614,7 +1658,7 @@ index 0000000000..90daae9cba
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomItemFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomItemFragment.java
 new file mode 100644
-index 0000000000..f79e1ec352
+index 0000000..f79e1ec
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockCustomItemFragment.java
 @@ -0,0 +1,174 @@
@@ -1794,10 +1838,10 @@ index 0000000000..f79e1ec352
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsAdapter.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsAdapter.java
 new file mode 100644
-index 0000000000..219351ee71
+index 0000000..90c467b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsAdapter.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,112 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -1834,11 +1878,9 @@ index 0000000000..219351ee71
 +
 +public class AdblockFilterListsAdapter extends BaseAdapter implements OnClickListener {
 +    private final LayoutInflater mLayoutInflater;
-+    private final Context mContext;
 +    private final AdblockController mController;
 +
 +    public AdblockFilterListsAdapter(Context context, AdblockController controller) {
-+        this.mContext = context;
 +        mLayoutInflater =
 +                (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 +        this.mController = controller;
@@ -1880,13 +1922,16 @@ index 0000000000..219351ee71
 +        final List<AdblockController.Subscription> subscriptions =
 +                mController.getInstalledSubscriptions();
 +        boolean subscribed = false;
++        boolean autoinstalled = false;
 +        for (final AdblockController.Subscription subscription : subscriptions) {
 +            if (subscription.url().equals(item.url())) {
 +                subscribed = true;
++                autoinstalled = subscription.autoinstalled();
 +                break;
 +            }
 +        }
 +        checkBox.setChecked(subscribed);
++        checkBox.setEnabled(!autoinstalled);
 +        checkBox.setContentDescription(item.title() + "filer list item checkbox");
 +
 +        TextView description = view.findViewById(R.id.name);
@@ -1898,8 +1943,6 @@ index 0000000000..219351ee71
 +    @Override
 +    public void onClick(View view) {
 +        URL url = (URL) view.getTag();
-+        TextView description = view.findViewById(R.id.name);
-+        String title = description.getText().toString();
 +
 +        CheckBox checkBox = view.findViewById(R.id.checkbox);
 +        if (checkBox.isChecked()) {
@@ -1913,7 +1956,7 @@ index 0000000000..219351ee71
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsFragment.java
 new file mode 100644
-index 0000000000..d3f8d60233
+index 0000000..d3f8d60
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockFilterListsFragment.java
 @@ -0,0 +1,57 @@
@@ -1976,7 +2019,7 @@ index 0000000000..d3f8d60233
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockMoreOptionsFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockMoreOptionsFragment.java
 new file mode 100644
-index 0000000000..f0949e2031
+index 0000000..f0949e2
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockMoreOptionsFragment.java
 @@ -0,0 +1,34 @@
@@ -2016,10 +2059,10 @@ index 0000000000..f0949e2031
 +}
 diff --git a/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockSettingsFragment.java b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockSettingsFragment.java
 new file mode 100644
-index 0000000000..d799fec495
+index 0000000..3f85bfb
 --- /dev/null
 +++ b/chrome/browser/adblock/android/java/src/org/chromium/chrome/browser/adblock/settings/AdblockSettingsFragment.java
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,162 @@
 +// This file is part of eyeo Chromium SDK,
 +// Copyright (C) 2006-present eyeo GmbH
 +// eyeo Chromium SDK is free software: you can redistribute it and/or modify
@@ -2051,6 +2094,7 @@ index 0000000000..d799fec495
 +        implements Preference.OnPreferenceChangeListener {
 +    private ChromeSwitchPreference mAdblockEnabled;
 +    private ChromeSwitchPreference mAcceptableAdsEnabled;
++    private ChromeSwitchPreference mAutoInstalledEnabled;
 +    private Preference mFilterLists;
 +    private Preference mAllowedDomains;
 +    private Preference mMoreOptions;
@@ -2060,6 +2104,8 @@ index 0000000000..d799fec495
 +            "fragment_adblock_settings_filter_lists_key";
 +    private static final String SETTINGS_AA_ENABLED_KEY =
 +            "fragment_adblock_settings_aa_enabled_key";
++    private static final String SETTINGS_AUTO_INSTALL_ENABLED_KEY =
++            "fragment_adblock_settings_auto_install_enabled_key";
 +    private static final String SETTINGS_ALLOWED_DOMAINS_KEY =
 +            "fragment_adblock_settings_allowed_domains_key";
 +    private static final String SETTINGS_MORE_OPTIONS_KEY =
@@ -2074,6 +2120,8 @@ index 0000000000..d799fec495
 +        mAdblockEnabled = (ChromeSwitchPreference) findPreference(SETTINGS_ENABLED_KEY);
 +        mFilterLists = findPreference(SETTINGS_FILTER_LISTS_KEY);
 +        mAcceptableAdsEnabled = (ChromeSwitchPreference) findPreference(SETTINGS_AA_ENABLED_KEY);
++        mAutoInstalledEnabled =
++                (ChromeSwitchPreference) findPreference(SETTINGS_AUTO_INSTALL_ENABLED_KEY);
 +        mAllowedDomains = findPreference(SETTINGS_ALLOWED_DOMAINS_KEY);
 +        mMoreOptions = findPreference(SETTINGS_MORE_OPTIONS_KEY);
 +    }
@@ -2086,6 +2134,7 @@ index 0000000000..d799fec495
 +    private void applyAdblockEnabled(boolean enabledValue) {
 +        mFilterLists.setEnabled(enabledValue);
 +        mAcceptableAdsEnabled.setEnabled(enabledValue);
++        mAutoInstalledEnabled.setEnabled(enabledValue);
 +        mAllowedDomains.setEnabled(enabledValue);
 +        mMoreOptions.setEnabled(enabledValue);
 +        mMoreOptions.setVisible(areMoreOptionsEnabled());
@@ -2103,6 +2152,11 @@ index 0000000000..d799fec495
 +                AdblockController.getInstance(ProfileManager.getLastUsedRegularProfile())
 +                        .isAcceptableAdsEnabled());
 +        mAcceptableAdsEnabled.setOnPreferenceChangeListener(this);
++
++        mAutoInstalledEnabled.setChecked(
++                AdblockController.getInstance(ProfileManager.getLastUsedRegularProfile())
++                        .isAutoInstallEnabled());
++        mAutoInstalledEnabled.setOnPreferenceChangeListener(this);
 +    }
 +
 +    private void maybeEnableMoreOptions() {
@@ -2153,10 +2207,14 @@ index 0000000000..d799fec495
 +            maybeEnableMoreOptions();
 +
 +            applyAdblockEnabled((Boolean) newValue);
-+        } else {
-+            assert preference.getKey().equals(SETTINGS_AA_ENABLED_KEY);
++        } else if (preference.getKey().equals(SETTINGS_AA_ENABLED_KEY)) {
 +            AdblockController.getInstance(ProfileManager.getLastUsedRegularProfile())
 +                    .setAcceptableAdsEnabled((Boolean) newValue);
++        } else {
++            assert preference.getKey().equals(SETTINGS_AUTO_INSTALL_ENABLED_KEY);
++
++            AdblockController.getInstance(ProfileManager.getLastUsedRegularProfile())
++                    .setAutoInstallEnabled((Boolean) newValue);
 +        }
 +        return true;
 +    }
@@ -2169,10 +2227,10 @@ index 0000000000..d799fec495
 +}
 diff --git a/chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockFilterFragmentTest.java b/chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockFilterFragmentTest.java
 new file mode 100644
-index 0000000000..c60596b53c
+index 0000000..fa6d060
 --- /dev/null
 +++ b/chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockFilterFragmentTest.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,129 @@
 +/*
 + * This file is part of eyeo Chromium SDK,
 + * Copyright (C) 2006-present eyeo GmbH
@@ -2192,6 +2250,12 @@ index 0000000000..c60596b53c
 +
 +package org.chromium.chrome.browser.adblock;
 +
++import static org.mockito.Mockito.when;
++
++import android.util.Pair;
++import android.view.View;
++import android.widget.CheckBox;
++
 +import androidx.test.filters.SmallTest;
 +
 +import org.junit.Assert;
@@ -2199,7 +2263,10 @@ index 0000000000..c60596b53c
 +import org.junit.Rule;
 +import org.junit.Test;
 +import org.junit.runner.RunWith;
++import org.mockito.Mock;
++import org.mockito.MockitoAnnotations;
 +
++import org.chromium.base.ThreadUtils;
 +import org.chromium.base.test.util.ApplicationTestUtils;
 +import org.chromium.base.test.util.CommandLineFlags;
 +import org.chromium.base.test.util.Feature;
@@ -2208,10 +2275,20 @@ index 0000000000..c60596b53c
 +import org.chromium.chrome.browser.settings.SettingsActivityTestRule;
 +import org.chromium.chrome.test.ChromeJUnit4ClassRunner;
 +import org.chromium.chrome.test.ChromeTabbedActivityTestRule;
++import org.chromium.components.adblock.AdblockController;
++import org.chromium.components.adblock.AdblockController.Subscription;
++
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.Arrays;
++import java.util.HashMap;
++import java.util.Map;
 +
 +@RunWith(ChromeJUnit4ClassRunner.class)
 +@CommandLineFlags.Add({ChromeSwitches.DISABLE_FIRST_RUN_EXPERIENCE})
 +public class AdblockFilterFragmentTest {
++    @Mock private AdblockController mAdblockControllerMock;
++
 +    @Rule
 +    public final ChromeTabbedActivityTestRule mActivityTestRule =
 +            new ChromeTabbedActivityTestRule();
@@ -2222,6 +2299,7 @@ index 0000000000..c60596b53c
 +
 +    @Before
 +    public void setUp() throws Exception {
++        MockitoAnnotations.initMocks(this);
 +        mActivityTestRule.startMainActivityOnBlankPage();
 +        mTestRule.startSettingsActivity();
 +        ApplicationTestUtils.finishActivity(mTestRule.getActivity());
@@ -2232,14 +2310,59 @@ index 0000000000..c60596b53c
 +    @Feature({"adblock"})
 +    public void testLanguageFiltersNotEmpty() {
 +        mTestRule.startSettingsActivity();
-+        AdblockFilterListsFragment fragment = mTestRule.getFragment();
++        final AdblockFilterListsFragment fragment = mTestRule.getFragment();
 +        Assert.assertNotNull(fragment);
 +        Assert.assertNotEquals(0, fragment.getListView().getCount());
++    }
++
++    @Test
++    @SmallTest
++    @Feature({"adblock"})
++    public void testAutoInstalledFilterListsCheckbox() throws MalformedURLException {
++        AdblockController.setInstanceForTesting(mAdblockControllerMock);
++        final String autoInstalledUrl = "https://auto_installed.com";
++        final String manuallyInstalledUrl = "https://manually_installed.com";
++        final String recommendedUrl = "https://some_recommendation.com";
++        final Subscription autoInstalled =
++                new Subscription(new URL(autoInstalledUrl), "auto", "", new String[] {}, true);
++        final Subscription manuallyInstalled =
++                new Subscription(
++                        new URL(manuallyInstalledUrl), "manual", "", new String[] {}, false);
++        final Subscription recommended =
++                new Subscription(
++                        new URL(recommendedUrl), "recommended", "", new String[] {}, false);
++        when(mAdblockControllerMock.getRecommendedSubscriptions())
++                .thenReturn(Arrays.asList(autoInstalled, manuallyInstalled, recommended));
++        when(mAdblockControllerMock.getInstalledSubscriptions())
++                .thenReturn(Arrays.asList(autoInstalled, manuallyInstalled));
++        mTestRule.startSettingsActivity();
++        final AdblockFilterListsFragment fragment = mTestRule.getFragment();
++        Assert.assertNotNull(fragment);
++        Assert.assertEquals(3, fragment.getListView().getCount());
++
++        ThreadUtils.runOnUiThreadBlocking(
++                () -> {
++                    // Map: filter list URL => Pair(checkbox marked, checkbox enabled)
++                    final Map<String, Pair<Boolean, Boolean>> expectations = new HashMap<>();
++                    expectations.put(autoInstalledUrl, new Pair<>(true, false));
++                    expectations.put(manuallyInstalledUrl, new Pair<>(true, true));
++                    expectations.put(recommendedUrl, new Pair<>(false, true));
++                    for (int i = 0; i < fragment.getListView().getCount(); i++) {
++                        final View view = fragment.getListView().getChildAt(i);
++                        final CheckBox checkBox = view.findViewById(R.id.checkbox);
++                        Assert.assertEquals(
++                                expectations.get(view.getTag().toString()).first,
++                                checkBox.isChecked());
++                        Assert.assertEquals(
++                                expectations.get(view.getTag().toString()).second,
++                                checkBox.isEnabled());
++                    }
++                });
 +    }
 +}
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_af.xtb b/chrome/browser/adblock/android/translations/adblock_strings_af.xtb
 new file mode 100644
-index 0000000000..0861004fdc
+index 0000000..0861004
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_af.xtb
 @@ -0,0 +1,4 @@
@@ -2249,7 +2372,7 @@ index 0000000000..0861004fdc
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_am.xtb b/chrome/browser/adblock/android/translations/adblock_strings_am.xtb
 new file mode 100644
-index 0000000000..a8188ff56b
+index 0000000..a8188ff
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_am.xtb
 @@ -0,0 +1,13 @@
@@ -2268,7 +2391,7 @@ index 0000000000..a8188ff56b
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ar.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ar.xtb
 new file mode 100644
-index 0000000000..2500a49975
+index 0000000..2500a49
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ar.xtb
 @@ -0,0 +1,13 @@
@@ -2287,7 +2410,7 @@ index 0000000000..2500a49975
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_as.xtb b/chrome/browser/adblock/android/translations/adblock_strings_as.xtb
 new file mode 100644
-index 0000000000..3ad7206d19
+index 0000000..3ad7206
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_as.xtb
 @@ -0,0 +1,4 @@
@@ -2297,7 +2420,7 @@ index 0000000000..3ad7206d19
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_az.xtb b/chrome/browser/adblock/android/translations/adblock_strings_az.xtb
 new file mode 100644
-index 0000000000..6d09f4cde0
+index 0000000..6d09f4c
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_az.xtb
 @@ -0,0 +1,4 @@
@@ -2307,7 +2430,7 @@ index 0000000000..6d09f4cde0
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_be.xtb b/chrome/browser/adblock/android/translations/adblock_strings_be.xtb
 new file mode 100644
-index 0000000000..09e9a3adc2
+index 0000000..09e9a3a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_be.xtb
 @@ -0,0 +1,4 @@
@@ -2317,7 +2440,7 @@ index 0000000000..09e9a3adc2
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_bg.xtb b/chrome/browser/adblock/android/translations/adblock_strings_bg.xtb
 new file mode 100644
-index 0000000000..ec97ea0690
+index 0000000..ec97ea0
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_bg.xtb
 @@ -0,0 +1,16 @@
@@ -2339,7 +2462,7 @@ index 0000000000..ec97ea0690
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_bn.xtb b/chrome/browser/adblock/android/translations/adblock_strings_bn.xtb
 new file mode 100644
-index 0000000000..79c1a9ebe5
+index 0000000..79c1a9e
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_bn.xtb
 @@ -0,0 +1,13 @@
@@ -2358,7 +2481,7 @@ index 0000000000..79c1a9ebe5
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_bs.xtb b/chrome/browser/adblock/android/translations/adblock_strings_bs.xtb
 new file mode 100644
-index 0000000000..ffac4da0a5
+index 0000000..ffac4da
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_bs.xtb
 @@ -0,0 +1,13 @@
@@ -2377,7 +2500,7 @@ index 0000000000..ffac4da0a5
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ca.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ca.xtb
 new file mode 100644
-index 0000000000..82d7ab531a
+index 0000000..82d7ab5
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ca.xtb
 @@ -0,0 +1,13 @@
@@ -2396,7 +2519,7 @@ index 0000000000..82d7ab531a
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_cs.xtb b/chrome/browser/adblock/android/translations/adblock_strings_cs.xtb
 new file mode 100644
-index 0000000000..8f35b76420
+index 0000000..8f35b76
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_cs.xtb
 @@ -0,0 +1,13 @@
@@ -2415,7 +2538,7 @@ index 0000000000..8f35b76420
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_da.xtb b/chrome/browser/adblock/android/translations/adblock_strings_da.xtb
 new file mode 100644
-index 0000000000..39c978aec9
+index 0000000..39c978a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_da.xtb
 @@ -0,0 +1,13 @@
@@ -2434,7 +2557,7 @@ index 0000000000..39c978aec9
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_de.xtb b/chrome/browser/adblock/android/translations/adblock_strings_de.xtb
 new file mode 100644
-index 0000000000..f20c25a3ad
+index 0000000..f20c25a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_de.xtb
 @@ -0,0 +1,13 @@
@@ -2453,7 +2576,7 @@ index 0000000000..f20c25a3ad
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_el.xtb b/chrome/browser/adblock/android/translations/adblock_strings_el.xtb
 new file mode 100644
-index 0000000000..a021bc0a31
+index 0000000..a021bc0
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_el.xtb
 @@ -0,0 +1,13 @@
@@ -2472,7 +2595,7 @@ index 0000000000..a021bc0a31
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_en-GB.xtb b/chrome/browser/adblock/android/translations/adblock_strings_en-GB.xtb
 new file mode 100644
-index 0000000000..a34364dbb1
+index 0000000..a34364d
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_en-GB.xtb
 @@ -0,0 +1,13 @@
@@ -2491,7 +2614,7 @@ index 0000000000..a34364dbb1
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_es-419.xtb b/chrome/browser/adblock/android/translations/adblock_strings_es-419.xtb
 new file mode 100644
-index 0000000000..6326102758
+index 0000000..6326102
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_es-419.xtb
 @@ -0,0 +1,13 @@
@@ -2510,7 +2633,7 @@ index 0000000000..6326102758
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_es.xtb b/chrome/browser/adblock/android/translations/adblock_strings_es.xtb
 new file mode 100644
-index 0000000000..f46c833cbd
+index 0000000..f46c833
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_es.xtb
 @@ -0,0 +1,13 @@
@@ -2529,7 +2652,7 @@ index 0000000000..f46c833cbd
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_et.xtb b/chrome/browser/adblock/android/translations/adblock_strings_et.xtb
 new file mode 100644
-index 0000000000..5fab16e2f3
+index 0000000..5fab16e
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_et.xtb
 @@ -0,0 +1,13 @@
@@ -2548,7 +2671,7 @@ index 0000000000..5fab16e2f3
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_eu.xtb b/chrome/browser/adblock/android/translations/adblock_strings_eu.xtb
 new file mode 100644
-index 0000000000..981c85fbc6
+index 0000000..981c85f
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_eu.xtb
 @@ -0,0 +1,4 @@
@@ -2558,7 +2681,7 @@ index 0000000000..981c85fbc6
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_fa.xtb b/chrome/browser/adblock/android/translations/adblock_strings_fa.xtb
 new file mode 100644
-index 0000000000..88874d3f23
+index 0000000..88874d3
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_fa.xtb
 @@ -0,0 +1,13 @@
@@ -2577,7 +2700,7 @@ index 0000000000..88874d3f23
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_fi.xtb b/chrome/browser/adblock/android/translations/adblock_strings_fi.xtb
 new file mode 100644
-index 0000000000..09249abbf6
+index 0000000..09249ab
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_fi.xtb
 @@ -0,0 +1,13 @@
@@ -2596,7 +2719,7 @@ index 0000000000..09249abbf6
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_fil.xtb b/chrome/browser/adblock/android/translations/adblock_strings_fil.xtb
 new file mode 100644
-index 0000000000..5369d4b31d
+index 0000000..5369d4b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_fil.xtb
 @@ -0,0 +1,13 @@
@@ -2615,7 +2738,7 @@ index 0000000000..5369d4b31d
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_fr-CA.xtb b/chrome/browser/adblock/android/translations/adblock_strings_fr-CA.xtb
 new file mode 100644
-index 0000000000..226196f307
+index 0000000..226196f
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_fr-CA.xtb
 @@ -0,0 +1,13 @@
@@ -2634,7 +2757,7 @@ index 0000000000..226196f307
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_fr.xtb b/chrome/browser/adblock/android/translations/adblock_strings_fr.xtb
 new file mode 100644
-index 0000000000..ceda983591
+index 0000000..ceda983
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_fr.xtb
 @@ -0,0 +1,13 @@
@@ -2653,7 +2776,7 @@ index 0000000000..ceda983591
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_gl.xtb b/chrome/browser/adblock/android/translations/adblock_strings_gl.xtb
 new file mode 100644
-index 0000000000..ad1197af41
+index 0000000..ad1197a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_gl.xtb
 @@ -0,0 +1,4 @@
@@ -2663,7 +2786,7 @@ index 0000000000..ad1197af41
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_gu.xtb b/chrome/browser/adblock/android/translations/adblock_strings_gu.xtb
 new file mode 100644
-index 0000000000..7d8a4df1b0
+index 0000000..7d8a4df
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_gu.xtb
 @@ -0,0 +1,4 @@
@@ -2673,7 +2796,7 @@ index 0000000000..7d8a4df1b0
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_hi.xtb b/chrome/browser/adblock/android/translations/adblock_strings_hi.xtb
 new file mode 100644
-index 0000000000..016f89e5f4
+index 0000000..016f89e
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_hi.xtb
 @@ -0,0 +1,13 @@
@@ -2692,7 +2815,7 @@ index 0000000000..016f89e5f4
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_hr.xtb b/chrome/browser/adblock/android/translations/adblock_strings_hr.xtb
 new file mode 100644
-index 0000000000..0cd45dd05f
+index 0000000..0cd45dd
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_hr.xtb
 @@ -0,0 +1,13 @@
@@ -2711,7 +2834,7 @@ index 0000000000..0cd45dd05f
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_hu.xtb b/chrome/browser/adblock/android/translations/adblock_strings_hu.xtb
 new file mode 100644
-index 0000000000..b56f841b67
+index 0000000..b56f841
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_hu.xtb
 @@ -0,0 +1,13 @@
@@ -2730,7 +2853,7 @@ index 0000000000..b56f841b67
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_hy.xtb b/chrome/browser/adblock/android/translations/adblock_strings_hy.xtb
 new file mode 100644
-index 0000000000..2ae4ee1075
+index 0000000..2ae4ee1
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_hy.xtb
 @@ -0,0 +1,4 @@
@@ -2740,7 +2863,7 @@ index 0000000000..2ae4ee1075
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_id.xtb b/chrome/browser/adblock/android/translations/adblock_strings_id.xtb
 new file mode 100644
-index 0000000000..9399a0ba13
+index 0000000..9399a0b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_id.xtb
 @@ -0,0 +1,13 @@
@@ -2759,7 +2882,7 @@ index 0000000000..9399a0ba13
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_is.xtb b/chrome/browser/adblock/android/translations/adblock_strings_is.xtb
 new file mode 100644
-index 0000000000..b93d5071f7
+index 0000000..b93d507
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_is.xtb
 @@ -0,0 +1,4 @@
@@ -2769,7 +2892,7 @@ index 0000000000..b93d5071f7
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_it.xtb b/chrome/browser/adblock/android/translations/adblock_strings_it.xtb
 new file mode 100644
-index 0000000000..79fec66388
+index 0000000..79fec66
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_it.xtb
 @@ -0,0 +1,13 @@
@@ -2788,7 +2911,7 @@ index 0000000000..79fec66388
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_iw.xtb b/chrome/browser/adblock/android/translations/adblock_strings_iw.xtb
 new file mode 100644
-index 0000000000..da68556aa0
+index 0000000..da68556
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_iw.xtb
 @@ -0,0 +1,13 @@
@@ -2807,7 +2930,7 @@ index 0000000000..da68556aa0
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ja.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ja.xtb
 new file mode 100644
-index 0000000000..b6add6b2ad
+index 0000000..b6add6b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ja.xtb
 @@ -0,0 +1,13 @@
@@ -2826,7 +2949,7 @@ index 0000000000..b6add6b2ad
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ka.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ka.xtb
 new file mode 100644
-index 0000000000..57c55dddd2
+index 0000000..57c55dd
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ka.xtb
 @@ -0,0 +1,4 @@
@@ -2836,7 +2959,7 @@ index 0000000000..57c55dddd2
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_kk.xtb b/chrome/browser/adblock/android/translations/adblock_strings_kk.xtb
 new file mode 100644
-index 0000000000..4fa047f61d
+index 0000000..4fa047f
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_kk.xtb
 @@ -0,0 +1,13 @@
@@ -2855,7 +2978,7 @@ index 0000000000..4fa047f61d
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_km.xtb b/chrome/browser/adblock/android/translations/adblock_strings_km.xtb
 new file mode 100644
-index 0000000000..553178f99a
+index 0000000..553178f
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_km.xtb
 @@ -0,0 +1,13 @@
@@ -2874,7 +2997,7 @@ index 0000000000..553178f99a
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_kn.xtb b/chrome/browser/adblock/android/translations/adblock_strings_kn.xtb
 new file mode 100644
-index 0000000000..cc3643a208
+index 0000000..cc3643a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_kn.xtb
 @@ -0,0 +1,4 @@
@@ -2884,7 +3007,7 @@ index 0000000000..cc3643a208
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ko.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ko.xtb
 new file mode 100644
-index 0000000000..e378e72c03
+index 0000000..e378e72
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ko.xtb
 @@ -0,0 +1,13 @@
@@ -2903,7 +3026,7 @@ index 0000000000..e378e72c03
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ky.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ky.xtb
 new file mode 100644
-index 0000000000..71a08837d2
+index 0000000..71a0883
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ky.xtb
 @@ -0,0 +1,4 @@
@@ -2913,7 +3036,7 @@ index 0000000000..71a08837d2
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_lo.xtb b/chrome/browser/adblock/android/translations/adblock_strings_lo.xtb
 new file mode 100644
-index 0000000000..eb6216c2e6
+index 0000000..eb6216c
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_lo.xtb
 @@ -0,0 +1,4 @@
@@ -2923,7 +3046,7 @@ index 0000000000..eb6216c2e6
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_lt.xtb b/chrome/browser/adblock/android/translations/adblock_strings_lt.xtb
 new file mode 100644
-index 0000000000..0d29766aba
+index 0000000..0d29766
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_lt.xtb
 @@ -0,0 +1,13 @@
@@ -2942,7 +3065,7 @@ index 0000000000..0d29766aba
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_lv.xtb b/chrome/browser/adblock/android/translations/adblock_strings_lv.xtb
 new file mode 100644
-index 0000000000..5e76438009
+index 0000000..5e76438
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_lv.xtb
 @@ -0,0 +1,13 @@
@@ -2961,7 +3084,7 @@ index 0000000000..5e76438009
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_mk.xtb b/chrome/browser/adblock/android/translations/adblock_strings_mk.xtb
 new file mode 100644
-index 0000000000..c5726c83fc
+index 0000000..c5726c8
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_mk.xtb
 @@ -0,0 +1,13 @@
@@ -2980,7 +3103,7 @@ index 0000000000..c5726c83fc
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ml.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ml.xtb
 new file mode 100644
-index 0000000000..f7db3152e4
+index 0000000..f7db315
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ml.xtb
 @@ -0,0 +1,4 @@
@@ -2990,7 +3113,7 @@ index 0000000000..f7db3152e4
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_mn.xtb b/chrome/browser/adblock/android/translations/adblock_strings_mn.xtb
 new file mode 100644
-index 0000000000..a22186757a
+index 0000000..a221867
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_mn.xtb
 @@ -0,0 +1,4 @@
@@ -3000,7 +3123,7 @@ index 0000000000..a22186757a
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_mr.xtb b/chrome/browser/adblock/android/translations/adblock_strings_mr.xtb
 new file mode 100644
-index 0000000000..098d29c992
+index 0000000..098d29c
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_mr.xtb
 @@ -0,0 +1,4 @@
@@ -3010,7 +3133,7 @@ index 0000000000..098d29c992
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ms.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ms.xtb
 new file mode 100644
-index 0000000000..4f7cde48bf
+index 0000000..4f7cde4
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ms.xtb
 @@ -0,0 +1,13 @@
@@ -3029,7 +3152,7 @@ index 0000000000..4f7cde48bf
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_my.xtb b/chrome/browser/adblock/android/translations/adblock_strings_my.xtb
 new file mode 100644
-index 0000000000..915e955d41
+index 0000000..915e955
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_my.xtb
 @@ -0,0 +1,13 @@
@@ -3048,7 +3171,7 @@ index 0000000000..915e955d41
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ne.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ne.xtb
 new file mode 100644
-index 0000000000..30c7e0657e
+index 0000000..30c7e06
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ne.xtb
 @@ -0,0 +1,4 @@
@@ -3058,7 +3181,7 @@ index 0000000000..30c7e0657e
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_nl.xtb b/chrome/browser/adblock/android/translations/adblock_strings_nl.xtb
 new file mode 100644
-index 0000000000..6bed94a9d1
+index 0000000..6bed94a
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_nl.xtb
 @@ -0,0 +1,13 @@
@@ -3077,7 +3200,7 @@ index 0000000000..6bed94a9d1
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_no.xtb b/chrome/browser/adblock/android/translations/adblock_strings_no.xtb
 new file mode 100644
-index 0000000000..913638ba4e
+index 0000000..913638b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_no.xtb
 @@ -0,0 +1,4 @@
@@ -3087,7 +3210,7 @@ index 0000000000..913638ba4e
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_or.xtb b/chrome/browser/adblock/android/translations/adblock_strings_or.xtb
 new file mode 100644
-index 0000000000..fe2ddbc993
+index 0000000..fe2ddbc
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_or.xtb
 @@ -0,0 +1,4 @@
@@ -3097,7 +3220,7 @@ index 0000000000..fe2ddbc993
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_pa.xtb b/chrome/browser/adblock/android/translations/adblock_strings_pa.xtb
 new file mode 100644
-index 0000000000..5c7ac50d57
+index 0000000..5c7ac50
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_pa.xtb
 @@ -0,0 +1,4 @@
@@ -3107,7 +3230,7 @@ index 0000000000..5c7ac50d57
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_pl.xtb b/chrome/browser/adblock/android/translations/adblock_strings_pl.xtb
 new file mode 100644
-index 0000000000..b37947e5ed
+index 0000000..b37947e
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_pl.xtb
 @@ -0,0 +1,13 @@
@@ -3126,7 +3249,7 @@ index 0000000000..b37947e5ed
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_pt-BR.xtb b/chrome/browser/adblock/android/translations/adblock_strings_pt-BR.xtb
 new file mode 100644
-index 0000000000..0185a74b08
+index 0000000..0185a74
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_pt-BR.xtb
 @@ -0,0 +1,13 @@
@@ -3145,7 +3268,7 @@ index 0000000000..0185a74b08
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_pt-PT.xtb b/chrome/browser/adblock/android/translations/adblock_strings_pt-PT.xtb
 new file mode 100644
-index 0000000000..914f6e0aa9
+index 0000000..914f6e0
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_pt-PT.xtb
 @@ -0,0 +1,13 @@
@@ -3164,7 +3287,7 @@ index 0000000000..914f6e0aa9
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ro.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ro.xtb
 new file mode 100644
-index 0000000000..12d057707a
+index 0000000..12d0577
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ro.xtb
 @@ -0,0 +1,13 @@
@@ -3183,7 +3306,7 @@ index 0000000000..12d057707a
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ru.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ru.xtb
 new file mode 100644
-index 0000000000..c92bc24fbe
+index 0000000..c92bc24
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ru.xtb
 @@ -0,0 +1,13 @@
@@ -3202,7 +3325,7 @@ index 0000000000..c92bc24fbe
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_si.xtb b/chrome/browser/adblock/android/translations/adblock_strings_si.xtb
 new file mode 100644
-index 0000000000..712d890720
+index 0000000..712d890
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_si.xtb
 @@ -0,0 +1,4 @@
@@ -3212,7 +3335,7 @@ index 0000000000..712d890720
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sk.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sk.xtb
 new file mode 100644
-index 0000000000..49373744e6
+index 0000000..4937374
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sk.xtb
 @@ -0,0 +1,13 @@
@@ -3231,7 +3354,7 @@ index 0000000000..49373744e6
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sl.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sl.xtb
 new file mode 100644
-index 0000000000..16ced370e7
+index 0000000..16ced37
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sl.xtb
 @@ -0,0 +1,13 @@
@@ -3250,7 +3373,7 @@ index 0000000000..16ced370e7
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sq.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sq.xtb
 new file mode 100644
-index 0000000000..3fecfc5f81
+index 0000000..3fecfc5
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sq.xtb
 @@ -0,0 +1,4 @@
@@ -3260,7 +3383,7 @@ index 0000000000..3fecfc5f81
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sr-Latn.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sr-Latn.xtb
 new file mode 100644
-index 0000000000..14178c31f3
+index 0000000..14178c3
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sr-Latn.xtb
 @@ -0,0 +1,4 @@
@@ -3270,7 +3393,7 @@ index 0000000000..14178c31f3
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sr.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sr.xtb
 new file mode 100644
-index 0000000000..0ed2dfa087
+index 0000000..0ed2dfa
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sr.xtb
 @@ -0,0 +1,13 @@
@@ -3289,7 +3412,7 @@ index 0000000000..0ed2dfa087
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sv.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sv.xtb
 new file mode 100644
-index 0000000000..49ab1852b1
+index 0000000..49ab185
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sv.xtb
 @@ -0,0 +1,13 @@
@@ -3308,7 +3431,7 @@ index 0000000000..49ab1852b1
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_sw.xtb b/chrome/browser/adblock/android/translations/adblock_strings_sw.xtb
 new file mode 100644
-index 0000000000..48641e0840
+index 0000000..48641e0
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_sw.xtb
 @@ -0,0 +1,13 @@
@@ -3327,7 +3450,7 @@ index 0000000000..48641e0840
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ta.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ta.xtb
 new file mode 100644
-index 0000000000..ef90687762
+index 0000000..ef90687
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ta.xtb
 @@ -0,0 +1,4 @@
@@ -3337,7 +3460,7 @@ index 0000000000..ef90687762
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_te.xtb b/chrome/browser/adblock/android/translations/adblock_strings_te.xtb
 new file mode 100644
-index 0000000000..48c714ba18
+index 0000000..48c714b
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_te.xtb
 @@ -0,0 +1,4 @@
@@ -3347,7 +3470,7 @@ index 0000000000..48c714ba18
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_th.xtb b/chrome/browser/adblock/android/translations/adblock_strings_th.xtb
 new file mode 100644
-index 0000000000..cbd45f6721
+index 0000000..cbd45f6
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_th.xtb
 @@ -0,0 +1,13 @@
@@ -3366,7 +3489,7 @@ index 0000000000..cbd45f6721
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_tr.xtb b/chrome/browser/adblock/android/translations/adblock_strings_tr.xtb
 new file mode 100644
-index 0000000000..3d8d36735e
+index 0000000..3d8d367
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_tr.xtb
 @@ -0,0 +1,13 @@
@@ -3385,7 +3508,7 @@ index 0000000000..3d8d36735e
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_uk.xtb b/chrome/browser/adblock/android/translations/adblock_strings_uk.xtb
 new file mode 100644
-index 0000000000..a5e5540c36
+index 0000000..a5e5540
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_uk.xtb
 @@ -0,0 +1,13 @@
@@ -3404,7 +3527,7 @@ index 0000000000..a5e5540c36
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_ur.xtb b/chrome/browser/adblock/android/translations/adblock_strings_ur.xtb
 new file mode 100644
-index 0000000000..fd24b10fac
+index 0000000..fd24b10
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_ur.xtb
 @@ -0,0 +1,13 @@
@@ -3423,7 +3546,7 @@ index 0000000000..fd24b10fac
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_uz.xtb b/chrome/browser/adblock/android/translations/adblock_strings_uz.xtb
 new file mode 100644
-index 0000000000..1d58ed4c6d
+index 0000000..1d58ed4
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_uz.xtb
 @@ -0,0 +1,4 @@
@@ -3433,7 +3556,7 @@ index 0000000000..1d58ed4c6d
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_vi.xtb b/chrome/browser/adblock/android/translations/adblock_strings_vi.xtb
 new file mode 100644
-index 0000000000..6874fed6d9
+index 0000000..6874fed
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_vi.xtb
 @@ -0,0 +1,13 @@
@@ -3452,7 +3575,7 @@ index 0000000000..6874fed6d9
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_zh-CN.xtb b/chrome/browser/adblock/android/translations/adblock_strings_zh-CN.xtb
 new file mode 100644
-index 0000000000..9d3d00822e
+index 0000000..9d3d008
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_zh-CN.xtb
 @@ -0,0 +1,13 @@
@@ -3471,7 +3594,7 @@ index 0000000000..9d3d00822e
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_zh-HK.xtb b/chrome/browser/adblock/android/translations/adblock_strings_zh-HK.xtb
 new file mode 100644
-index 0000000000..3ecd9e371a
+index 0000000..3ecd9e3
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_zh-HK.xtb
 @@ -0,0 +1,4 @@
@@ -3481,7 +3604,7 @@ index 0000000000..3ecd9e371a
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_zh-TW.xtb b/chrome/browser/adblock/android/translations/adblock_strings_zh-TW.xtb
 new file mode 100644
-index 0000000000..b085469ba6
+index 0000000..b085469
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_zh-TW.xtb
 @@ -0,0 +1,13 @@
@@ -3500,7 +3623,7 @@ index 0000000000..b085469ba6
 +</translationbundle>
 diff --git a/chrome/browser/adblock/android/translations/adblock_strings_zu.xtb b/chrome/browser/adblock/android/translations/adblock_strings_zu.xtb
 new file mode 100644
-index 0000000000..f9c1cd322f
+index 0000000..f9c1cd3
 --- /dev/null
 +++ b/chrome/browser/adblock/android/translations/adblock_strings_zu.xtb
 @@ -0,0 +1,4 @@
@@ -3508,6 +3631,3 @@ index 0000000000..f9c1cd322f
 +<!DOCTYPE translationbundle>
 +<translationbundle lang="zu">
 +</translationbundle>
--- 
-2.43.2
-

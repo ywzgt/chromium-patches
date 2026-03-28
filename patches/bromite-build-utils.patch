@@ -10,17 +10,17 @@ Subject: bromite build utils
  build/bromite/gyp/cpp_bromite_include.pydeps  |   9 ++
  build/bromite/gyp/java_bromite_impl.py        | 107 ++++++++++++++++++
  build/bromite/gyp/java_bromite_impl.pydeps    |   9 ++
- build/config/BUILDCONFIG.gn                   |   1 +
+ build/config/BUILDCONFIG.gn                   |   2 +
  build/config/android/rules.gni                |   6 +-
  .../ChromeAccessibilitySettingsDelegate.java  |   5 +
  chrome/browser/flags/BUILD.gn                 |  10 +-
- .../flags/android/cromite_native_utils.cc     |  43 +++++++
+ .../flags/android/cromite_native_utils.cc     |  92 +++++++++++++++
  .../flags/android/cromite_native_utils.h      |  14 +++
  .../browser/flags/CromiteNativeUtils.java     |  46 ++++++++
  mojo/public/tools/mojom/mojom_parser.py       |  22 +++-
  tools/grit/grit/grd_reader.py                 |  27 ++++-
  tools/grit/preprocess_if_expr.py              |  32 +++++-
- 17 files changed, 487 insertions(+), 19 deletions(-)
+ 17 files changed, 537 insertions(+), 19 deletions(-)
  create mode 100644 build/bromite/bromite_utils.gni
  create mode 100644 build/bromite/gyp/cpp_bromite_include.py
  create mode 100644 build/bromite/gyp/cpp_bromite_include.pydeps
@@ -33,7 +33,7 @@ Subject: bromite build utils
 diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enum.py
 --- a/build/android/gyp/java_cpp_enum.py
 +++ b/build/android/gyp/java_cpp_enum.py
-@@ -173,6 +173,7 @@ class DirectiveSet:
+@@ -209,6 +209,7 @@ class DirectiveSet:
  
  
  class HeaderParser:
@@ -41,7 +41,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
    single_line_comment_re = re.compile(r'\s*//\s*([^\n]*)')
    multi_line_comment_start_re = re.compile(r'\s*/\*')
    enum_line_re = re.compile(r'^\s*(\w+)(\s*\=\s*([^,\n]+))?,?')
-@@ -200,7 +201,7 @@ class HeaderParser:
+@@ -237,7 +238,7 @@ class HeaderParser:
    enum_single_line_re = re.compile(
        r'^\s*(?:\[cpp.*\])?\s*enum.*{(?P<enum_entries>.*)}.*$')
  
@@ -50,15 +50,15 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
      self._lines = lines
      self._path = path
      self._enum_definitions = []
-@@ -217,6 +218,7 @@ class HeaderParser:
+@@ -254,6 +255,7 @@ class HeaderParser:
      self._generator_directives = DirectiveSet()
      self._multi_line_generator_directive = None
      self._current_enum_entry = ''
 +    self._options = options
  
    def _ShouldIgnoreLine(self):
-     return self._in_preprocessor_block and not self._in_buildflag_android
-@@ -260,6 +262,24 @@ class HeaderParser:
+     return self._in_preprocessor_block and not all(self._in_buildflag_android)
+@@ -296,6 +298,24 @@ class HeaderParser:
        raise Exception('Multi-line comments in enums are not supported in ' +
                        self._path)
  
@@ -83,7 +83,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
      enum_comment = HeaderParser.single_line_comment_re.match(line)
      if enum_comment:
        comment = enum_comment.groups()[0]
-@@ -360,9 +380,9 @@ class HeaderParser:
+@@ -396,9 +416,9 @@ class HeaderParser:
          self._ParseSingleLineEnum(single_line_enum.group('enum_entries'))
  
  
@@ -95,7 +95,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
      if not enum_definitions:
        raise Exception('No enums found in %s\n'
                        'Did you forget prefixing enums with '
-@@ -375,9 +395,9 @@ def DoGenerate(source_paths):
+@@ -411,9 +431,9 @@ def DoGenerate(source_paths):
        yield output_path, output
  
  
@@ -107,7 +107,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
  
  
  def GenerateOutput(source_path, enum_definition):
-@@ -456,6 +476,10 @@ def DoMain(argv):
+@@ -496,6 +516,10 @@ def DoMain(argv):
    parser.add_option('--srcjar',
                      help='When specified, a .srcjar at the given path is '
                      'created instead of individual .java files.')
@@ -118,7 +118,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
  
    options, args = parser.parse_args(argv)
  
-@@ -465,7 +489,7 @@ def DoMain(argv):
+@@ -505,7 +529,7 @@ def DoMain(argv):
  
    with action_helpers.atomic_output(options.srcjar) as f:
      with zipfile.ZipFile(f, 'w', zipfile.ZIP_STORED) as srcjar:
@@ -130,7 +130,7 @@ diff --git a/build/android/gyp/java_cpp_enum.py b/build/android/gyp/java_cpp_enu
 diff --git a/build/android/gyp/util/build_utils.py b/build/android/gyp/util/build_utils.py
 --- a/build/android/gyp/util/build_utils.py
 +++ b/build/android/gyp/util/build_utils.py
-@@ -499,4 +499,27 @@ def ReadSourcesList(sources_list_file_name):
+@@ -502,4 +502,27 @@ def ReadSourcesList(sources_list_file_name):
    Note that this function should not be used to parse response files.
    """
    with open(sources_list_file_name) as f:
@@ -426,18 +426,16 @@ new file mode 100644
 diff --git a/build/config/BUILDCONFIG.gn b/build/config/BUILDCONFIG.gn
 --- a/build/config/BUILDCONFIG.gn
 +++ b/build/config/BUILDCONFIG.gn
-@@ -726,6 +726,7 @@ set_defaults("component") {
+@@ -764,3 +764,5 @@ if (is_component_build) {
+ set_defaults("component") {
    configs = default_component_configs
  }
- 
++
 +import("//build/bromite/bromite_utils.gni")
- # =============================================================================
- # ACTION OVERRIDE
- # =============================================================================
 diff --git a/build/config/android/rules.gni b/build/config/android/rules.gni
 --- a/build/config/android/rules.gni
 +++ b/build/config/android/rules.gni
-@@ -207,7 +207,7 @@ if (!is_robolectric && enable_java_templates) {
+@@ -209,7 +209,7 @@ if (!is_robolectric && enable_java_templates) {
    #   }
    template("java_cpp_enum") {
      action_with_pydeps(target_name) {
@@ -446,7 +444,7 @@ diff --git a/build/config/android/rules.gni b/build/config/android/rules.gni
  
        # The sources aren't compiled so don't check their dependencies.
        check_includes = false
-@@ -218,6 +218,10 @@ if (!is_robolectric && enable_java_templates) {
+@@ -220,6 +220,10 @@ if (!is_robolectric && enable_java_templates) {
        _rebased_sources = rebase_path(invoker.sources, root_build_dir)
  
        args = [ "--srcjar=$_rebased_srcjar_path" ] + _rebased_sources
@@ -460,7 +458,7 @@ diff --git a/build/config/android/rules.gni b/build/config/android/rules.gni
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
-@@ -10,6 +10,11 @@ import org.chromium.components.browser_ui.accessibility.AccessibilitySettingsDel
+@@ -13,6 +13,11 @@ import org.chromium.components.browser_ui.settings.SettingsNavigation;
  import org.chromium.components.user_prefs.UserPrefs;
  import org.chromium.content_public.browser.BrowserContextHandle;
  
@@ -485,7 +483,7 @@ diff --git a/chrome/browser/flags/BUILD.gn b/chrome/browser/flags/BUILD.gn
      "android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java",
      "android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureMap.java",
      "android/java/src/org/chromium/chrome/browser/flags/ChromeSessionState.java",
-@@ -30,7 +31,8 @@ android_library("java") {
+@@ -31,7 +32,8 @@ android_library("java") {
  }
  
  generate_jni("jni_headers") {
@@ -495,7 +493,7 @@ diff --git a/chrome/browser/flags/BUILD.gn b/chrome/browser/flags/BUILD.gn
      "android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureMap.java",
      "android/java/src/org/chromium/chrome/browser/flags/ChromeSessionState.java",
    ]
-@@ -38,6 +40,10 @@ generate_jni("jni_headers") {
+@@ -39,6 +41,10 @@ generate_jni("jni_headers") {
  
  static_library("flags_android") {
    sources = [
@@ -510,12 +508,13 @@ diff --git a/chrome/browser/flags/android/cromite_native_utils.cc b/chrome/brows
 new file mode 100755
 --- /dev/null
 +++ b/chrome/browser/flags/android/cromite_native_utils.cc
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,92 @@
 +#include "chrome/browser/flags/android/cromite_native_utils.h"
 +
 +#include "chrome/browser/browser_process.h"
++#include "chrome/browser/about_flags.h"
 +#include "chrome/browser/flags/jni_headers/CromiteNativeUtils_jni.h"
-+#include "components/flags_ui/pref_service_flags_storage.h"
++#include "components/webui/flags/pref_service_flags_storage.h"
 +
 +#include "base/android/jni_string.h"
 +
@@ -532,10 +531,33 @@ new file mode 100755
 +  entries.erase(internal_name + "@1"); // enabled
 +  entries.erase(internal_name + "@2"); // disabled
 +
-+  if (isEnabled)
-+    entries.insert(internal_name + "@1");
-+  else
-+    entries.insert(internal_name + "@2");
++  bool is_switch = false;
++  if (const flags_ui::FeatureEntry* entry =
++        about_flags::GetCurrentFlagsState()->FindFeatureEntryByName(
++          internal_name)) {
++    if (entry->type == flags_ui::FeatureEntry::SINGLE_DISABLE_VALUE) {
++      entries.erase(entry->switches.command_line_switch);
++      if (isEnabled) {
++        entries.insert(entry->switches.command_line_switch);
++      }
++      is_switch = true;
++    } else if (entry->type == flags_ui::FeatureEntry::ENABLE_DISABLE_VALUE) {
++      entries.erase(entry->switches.command_line_switch);
++      entries.erase(entry->switches.disable_command_line_switch);
++      if (isEnabled) {
++        entries.insert(entry->switches.disable_command_line_switch);
++      }
++      is_switch = true;
++    }
++  }
++
++  if (!is_switch) {
++    if (isEnabled) {
++      entries.insert(internal_name + "@1");
++    } else {
++      entries.insert(internal_name + "@2");
++    }
++  }
 +
 +  flags_storage.SetFlags(entries);
 +  flags_storage.CommitPendingWrites();
@@ -544,13 +566,38 @@ new file mode 100755
 +static jboolean JNI_CromiteNativeUtils_IsFlagEnabled(JNIEnv* env,
 +    const JavaParamRef<jstring>& featureName) {
 +  auto internal_name = base::android::ConvertJavaStringToUTF8(env, featureName);
-+  const std::string enabled_entry = internal_name + "@1";
 +
 +  flags_ui::PrefServiceFlagsStorage flags_storage(
 +      g_browser_process->local_state());
 +  std::set<std::string> entries = flags_storage.GetFlags();
++
++  if (const flags_ui::FeatureEntry* entry =
++        about_flags::GetCurrentFlagsState()->FindFeatureEntryByName(
++          internal_name)) {
++    if (entry->type == flags_ui::FeatureEntry::SINGLE_DISABLE_VALUE &&
++        entries.count(entry->switches.command_line_switch)) {
++      return true;
++    } else if (entry->type == flags_ui::FeatureEntry::ENABLE_DISABLE_VALUE &&
++               entries.count(entry->switches.disable_command_line_switch)) {
++      return true;
++    }
++  }
++
++  const std::string enabled_entry = internal_name + "@1";
 +  if (entries.count(enabled_entry))
 +    return true;
++
++  const std::string disabled_entry = internal_name + "@2";
++  if (entries.count(disabled_entry))
++    return false;
++
++  if (const flags_ui::FeatureEntry* entry =
++        about_flags::GetCurrentFlagsState()->FindFeatureEntryByName(
++          internal_name)) {
++    if (const base::Feature* feature = entry->feature.feature) {
++      return feature->default_state == base::FEATURE_ENABLED_BY_DEFAULT;
++    }
++  }
 +
 +  return false;
 +}
@@ -580,9 +627,9 @@ new file mode 100755
 @@ -0,0 +1,46 @@
 +package org.chromium.chrome.browser.flags;
 +
-+import org.chromium.base.cached_flags.CachedFlag;
++import org.chromium.components.cached_flags.CachedFlagsSharedPreferences;
++import org.chromium.components.cached_flags.CachedFlag;
 +import org.chromium.chrome.browser.flags.ChromeFeatureList;
-+import org.chromium.base.cached_flags.CachedFlagsSharedPreferences;
 +
 +import org.jni_zero.CalledByNative;
 +import org.jni_zero.NativeMethods;
@@ -635,12 +682,12 @@ diff --git a/mojo/public/tools/mojom/mojom_parser.py b/mojo/public/tools/mojom/m
  from collections import defaultdict
  
  from mojom.generate import module
-@@ -176,11 +177,26 @@ def _CollectAllowedImportsFromBuildMetadata(build_metadata_filename):
+@@ -177,11 +178,26 @@ def _CollectAllowedImportsFromBuildMetadata(build_metadata_filename):
    collect(build_metadata_filename)
    return allowed_imports
  
 +def _ResolveInclude(mojom_abspath, input_root_paths):
-+  mojom_abspath = _ResolveRelativeImportPath(mojom_abspath, input_root_paths)
++  mojom_abspath = _ResolveRelativeImportPath(mojom_abspath, mojom_abspath, input_root_paths)
 +  with codecs.open(mojom_abspath, encoding='utf-8') as f:
 +    src = f.read()
 +
@@ -664,7 +711,7 @@ diff --git a/mojo/public/tools/mojom/mojom_parser.py b/mojo/public/tools/mojom/m
      conditional_features.RemoveDisabledDefinitions(ast, enabled_features)
      return mojom_abspath, ast
  
-@@ -300,7 +316,7 @@ def _ParseMojoms(mojom_files,
+@@ -301,7 +317,7 @@ def _ParseMojoms(mojom_files,
        (path, abs_path) for abs_path, path in mojom_files_to_parse.items())
  
    logging.info('Parsing %d .mojom into ASTs', len(mojom_files_to_parse))

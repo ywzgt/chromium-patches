@@ -18,20 +18,21 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  components/ntp_tiles/BUILD.gn                   |  3 ---
  .../ntp_tiles/custom_links_manager_impl.cc      |  1 -
  components/ntp_tiles/most_visited_sites.cc      |  2 --
+ .../site_data/leveldb_site_data_store.cc        |  2 +-
  services/metrics/public/cpp/ukm_recorder.cc     |  1 +
- 10 files changed, 7 insertions(+), 44 deletions(-)
+ 11 files changed, 8 insertions(+), 45 deletions(-)
 
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/firstrun/FirstRunActivityBase.java b/chrome/android/java/src/org/chromium/chrome/browser/firstrun/FirstRunActivityBase.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/firstrun/FirstRunActivityBase.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/firstrun/FirstRunActivityBase.java
-@@ -64,7 +64,7 @@ public abstract class FirstRunActivityBase extends AsyncInitializationActivity
-     static final String SHOW_SYNC_CONSENT_PAGE = "ShowSyncConsent";
+@@ -45,7 +45,7 @@ public abstract class FirstRunActivityBase extends FullscreenSigninAndHistorySyn
+     static final String SHOW_SEARCH_ENGINE_PAGE = "ShowSearchEnginePage";
      static final String SHOW_HISTORY_SYNC_PAGE = "ShowHistorySync";
  
 -    public static final boolean DEFAULT_METRICS_AND_CRASH_REPORTING = true;
 +    public static final boolean DEFAULT_METRICS_AND_CRASH_REPORTING = false;
  
-     private static PolicyLoadListenerFactory sPolicyLoadListenerFactoryForTesting;
+     private boolean mNativeInitialized;
  
 diff --git a/chrome/browser/android/ntp/most_visited_sites_bridge.cc b/chrome/browser/android/ntp/most_visited_sites_bridge.cc
 --- a/chrome/browser/android/ntp/most_visited_sites_bridge.cc
@@ -91,27 +92,27 @@ diff --git a/chrome/browser/android/ntp/most_visited_sites_bridge.cc b/chrome/br
 diff --git a/chrome/browser/browser_process_impl.cc b/chrome/browser/browser_process_impl.cc
 --- a/chrome/browser/browser_process_impl.cc
 +++ b/chrome/browser/browser_process_impl.cc
-@@ -1101,7 +1101,7 @@ void BrowserProcessImpl::RegisterPrefs(PrefRegistrySimple* registry) {
- #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+@@ -1130,7 +1130,7 @@ void BrowserProcessImpl::RegisterPrefs(PrefRegistrySimple* registry) {
+ #endif  // BUILDFLAG(IS_CHROMEOS)
  
    registry->RegisterBooleanPref(metrics::prefs::kMetricsReportingEnabled,
 -                                GoogleUpdateSettings::GetCollectStatsConsent());
 +                                false);
    registry->RegisterBooleanPref(prefs::kDevToolsRemoteDebuggingAllowed, true);
- }
  
+ #if BUILDFLAG(IS_LINUX)
 diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
 --- a/chrome/browser/chrome_content_browser_client.cc
 +++ b/chrome/browser/chrome_content_browser_client.cc
-@@ -84,7 +84,6 @@
- #include "chrome/browser/history/history_service_factory.h"
+@@ -91,7 +91,6 @@
  #include "chrome/browser/interstitials/enterprise_util.h"
+ #include "chrome/browser/language_detection/language_detection_model_service_factory.h"
  #include "chrome/browser/lifetime/browser_shutdown.h"
 -#include "chrome/browser/lookalikes/lookalike_url_navigation_throttle.h"
  #include "chrome/browser/media/audio_service_util.h"
  #include "chrome/browser/media/prefs/capture_device_ranking.h"
  #include "chrome/browser/media/router/media_router_feature.h"
-@@ -5053,16 +5052,6 @@ ChromeContentBrowserClient::CreateThrottlesForNavigation(
+@@ -5238,16 +5237,6 @@ ChromeContentBrowserClient::CreateThrottlesForNavigation(
      content::NavigationHandle* handle) {
    std::vector<std::unique_ptr<content::NavigationThrottle>> throttles;
  
@@ -128,8 +129,8 @@ diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/ch
  #if BUILDFLAG(IS_ANDROID)
    // TODO(davidben): This is insufficient to integrate with prerender properly.
    // https://crbug.com/370595
-@@ -5162,10 +5151,6 @@ ChromeContentBrowserClient::CreateThrottlesForNavigation(
-     throttle_manager->MaybeAppendNavigationThrottles(handle, &throttles);
+@@ -5380,10 +5369,6 @@ ChromeContentBrowserClient::CreateThrottlesForNavigation(
+     }
    }
  
 -  MaybeAddThrottle(
@@ -142,7 +143,7 @@ diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/ch
 diff --git a/chrome/browser/metrics/chrome_metrics_services_manager_client.cc b/chrome/browser/metrics/chrome_metrics_services_manager_client.cc
 --- a/chrome/browser/metrics/chrome_metrics_services_manager_client.cc
 +++ b/chrome/browser/metrics/chrome_metrics_services_manager_client.cc
-@@ -93,6 +93,10 @@ BASE_FEATURE(kPostFREFixMetricsReportingFeature,
+@@ -89,6 +89,10 @@ BASE_FEATURE(kPostFREFixMetricsReportingFeature,
  // Name of the variations param that defines the sampling rate.
  const char kRateParamName[] = "sampling_rate_per_mille";
  
@@ -156,7 +157,7 @@ diff --git a/chrome/browser/metrics/chrome_metrics_services_manager_client.cc b/
 diff --git a/chrome/browser/ui/search/ntp_user_data_logger.cc b/chrome/browser/ui/search/ntp_user_data_logger.cc
 --- a/chrome/browser/ui/search/ntp_user_data_logger.cc
 +++ b/chrome/browser/ui/search/ntp_user_data_logger.cc
-@@ -394,8 +394,6 @@ void NTPUserDataLogger::LogMostVisitedImpression(
+@@ -384,8 +384,6 @@ void NTPUserDataLogger::LogMostVisitedImpression(
  
  void NTPUserDataLogger::LogMostVisitedNavigation(
      const ntp_tiles::NTPTileImpression& impression) {
@@ -165,7 +166,7 @@ diff --git a/chrome/browser/ui/search/ntp_user_data_logger.cc b/chrome/browser/u
    // Records the action. This will be available as a time-stamped stream
    // server-side and can be used to compute time-to-long-dwell.
    base::RecordAction(base::UserMetricsAction("MostVisited_Clicked"));
-@@ -424,10 +422,8 @@ void NTPUserDataLogger::EmitNtpStatistics(base::TimeDelta load_time,
+@@ -414,10 +412,8 @@ void NTPUserDataLogger::EmitNtpStatistics(base::TimeDelta load_time,
      if (!impression.has_value()) {
        break;
      }
@@ -188,7 +189,7 @@ diff --git a/components/ntp_tiles/BUILD.gn b/components/ntp_tiles/BUILD.gn
      "most_visited_sites.cc",
      "most_visited_sites.h",
      "ntp_tile.cc",
-@@ -97,7 +95,6 @@ source_set("unit_tests") {
+@@ -99,7 +97,6 @@ source_set("unit_tests") {
      "custom_links_manager_impl_unittest.cc",
      "custom_links_store_unittest.cc",
      "icon_cacher_impl_unittest.cc",
@@ -199,7 +200,7 @@ diff --git a/components/ntp_tiles/BUILD.gn b/components/ntp_tiles/BUILD.gn
 diff --git a/components/ntp_tiles/custom_links_manager_impl.cc b/components/ntp_tiles/custom_links_manager_impl.cc
 --- a/components/ntp_tiles/custom_links_manager_impl.cc
 +++ b/components/ntp_tiles/custom_links_manager_impl.cc
-@@ -203,7 +203,6 @@ void CustomLinksManagerImpl::RemoveCustomLinksForPreinstalledApps() {
+@@ -217,7 +217,6 @@ void CustomLinksManagerImpl::RemoveCustomLinksForPreinstalledApps() {
        }
      }
      if (default_app_links_deleted) {
@@ -210,7 +211,7 @@ diff --git a/components/ntp_tiles/custom_links_manager_impl.cc b/components/ntp_
 diff --git a/components/ntp_tiles/most_visited_sites.cc b/components/ntp_tiles/most_visited_sites.cc
 --- a/components/ntp_tiles/most_visited_sites.cc
 +++ b/components/ntp_tiles/most_visited_sites.cc
-@@ -721,8 +721,6 @@ void MostVisitedSites::SaveTilesAndNotify(
+@@ -734,8 +734,6 @@ void MostVisitedSites::SaveTilesAndNotify(
                                     : new_tiles;
  
    if (fixed_tiles.size() != new_tiles.size()) {
@@ -219,10 +220,22 @@ diff --git a/components/ntp_tiles/most_visited_sites.cc b/components/ntp_tiles/m
    }
    if (!current_tiles_.has_value() || (*current_tiles_ != fixed_tiles)) {
      current_tiles_.emplace(std::move(fixed_tiles));
+diff --git a/components/performance_manager/persistence/site_data/leveldb_site_data_store.cc b/components/performance_manager/persistence/site_data/leveldb_site_data_store.cc
+--- a/components/performance_manager/persistence/site_data/leveldb_site_data_store.cc
++++ b/components/performance_manager/persistence/site_data/leveldb_site_data_store.cc
+@@ -30,7 +30,7 @@ namespace performance_manager {
+ 
+ namespace {
+ 
+-std::atomic<bool> g_use_in_memory_db_for_testing = false;
++std::atomic<bool> g_use_in_memory_db_for_testing = true;
+ 
+ // The name of the following histograms is the same as the one used in the
+ // //c/b/resource_coordinator version of this file. It's fine to keep the same
 diff --git a/services/metrics/public/cpp/ukm_recorder.cc b/services/metrics/public/cpp/ukm_recorder.cc
 --- a/services/metrics/public/cpp/ukm_recorder.cc
 +++ b/services/metrics/public/cpp/ukm_recorder.cc
-@@ -138,4 +138,5 @@ void UkmRecorder::RemoveObserver(Observer* observer) {
+@@ -151,4 +151,5 @@ void UkmRecorder::RemoveObserver(Observer* observer) {
    observers_.RemoveObserver(observer);
  }
  

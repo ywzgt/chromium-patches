@@ -6,12 +6,13 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
  services/device/geolocation/BUILD.gn                  |  1 -
  .../device/geolocation/LocationProviderFactory.java   | 11 ++---------
- 2 files changed, 2 insertions(+), 10 deletions(-)
+ services/device/public/cpp/device_features.cc         |  3 ++-
+ 3 files changed, 4 insertions(+), 11 deletions(-)
 
 diff --git a/services/device/geolocation/BUILD.gn b/services/device/geolocation/BUILD.gn
 --- a/services/device/geolocation/BUILD.gn
 +++ b/services/device/geolocation/BUILD.gn
-@@ -165,7 +165,6 @@ if (is_android) {
+@@ -152,7 +152,6 @@ if (is_android) {
        "android/java/src/org/chromium/device/geolocation/LocationProviderAdapter.java",
        "android/java/src/org/chromium/device/geolocation/LocationProviderAndroid.java",
        "android/java/src/org/chromium/device/geolocation/LocationProviderFactory.java",
@@ -22,7 +23,7 @@ diff --git a/services/device/geolocation/BUILD.gn b/services/device/geolocation/
 diff --git a/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderFactory.java b/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderFactory.java
 --- a/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderFactory.java
 +++ b/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderFactory.java
-@@ -26,19 +26,12 @@ public class LocationProviderFactory {
+@@ -29,19 +29,12 @@ public class LocationProviderFactory {
  
      @CalledByNative
      public static void useGmsCoreLocationProvider() {
@@ -44,4 +45,24 @@ diff --git a/services/device/geolocation/android/java/src/org/chromium/device/ge
          return sProviderImpl;
      }
  }
+diff --git a/services/device/public/cpp/device_features.cc b/services/device/public/cpp/device_features.cc
+--- a/services/device/public/cpp/device_features.cc
++++ b/services/device/public/cpp/device_features.cc
+@@ -64,6 +64,7 @@ const base::FeatureParam<int> kWinSystemLocationPermissionPollingParam{
+ BASE_FEATURE(kLocationProviderManager,
+              "LocationProviderManager",
+              base::FEATURE_DISABLED_BY_DEFAULT);
++SET_CROMITE_FEATURE_DISABLED(kLocationProviderManager);
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ // Enables crash key logging for USB device open operations on ChromeOS. See
+@@ -105,7 +106,7 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>::Option
+ const base::FeatureParam<device::mojom::LocationProviderManagerMode>
+     kLocationProviderManagerParam{
+         &kLocationProviderManager, "LocationProviderManagerMode",
+-        device::mojom::LocationProviderManagerMode::kNetworkOnly,
++        device::mojom::LocationProviderManagerMode::kPlatformOnly,
+         &location_provider_manager_mode_options};
+ 
+ bool IsOsLevelGeolocationPermissionSupportEnabled() {
 --

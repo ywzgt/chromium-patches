@@ -6,7 +6,7 @@ In site settings added ability to block all popups per site
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- .../tab_under_navigation_throttle.cc          |   1 +
+ .../tab_under_navigation_throttle.cc          |  11 +-
  .../android/popup_blocked_message_delegate.cc |  20 +++-
  .../android/popup_blocked_message_delegate.h  |   1 +
  components/blocked_content/popup_blocker.cc   |   3 +
@@ -15,7 +15,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
  .../bromite_content_settings/popups.grdp      |  12 ++
  .../bromite_content_settings/popups.inc       |   8 ++
  .../core/browser/content_settings_registry.cc |   2 +-
- 9 files changed, 153 insertions(+), 3 deletions(-)
+ 9 files changed, 160 insertions(+), 6 deletions(-)
  create mode 100644 components/browser_ui/site_settings/android/java/src/org/chromium/components/browser_ui/site_settings/impl/BromitePopupContentSetting.java
  create mode 100644 components/browser_ui/strings/bromite_content_settings/popups.grdp
  create mode 100644 components/content_settings/core/browser/bromite_content_settings/popups.inc
@@ -23,14 +23,24 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/chrome/browser/ui/blocked_content/tab_under_navigation_throttle.cc b/chrome/browser/ui/blocked_content/tab_under_navigation_throttle.cc
 --- a/chrome/browser/ui/blocked_content/tab_under_navigation_throttle.cc
 +++ b/chrome/browser/ui/blocked_content/tab_under_navigation_throttle.cc
-@@ -72,6 +72,7 @@ void LogTabUnderAttempt(content::NavigationHandle* handle) {
- BASE_FEATURE(kBlockTabUnders,
-              "BlockTabUnders",
-              base::FEATURE_DISABLED_BY_DEFAULT);
-+SET_CROMITE_FEATURE_ENABLED(kBlockTabUnders);
+@@ -142,9 +142,14 @@ TabUnderNavigationThrottle::MaybeBlockNavigation() {
  
- // static
- std::unique_ptr<content::NavigationThrottle>
+   LogTabUnderAttempt(navigation_handle());
+ 
+-  // We unconditionally proceed. There used to be a tab-under blocking
+-  // experiment, but it never launched.
+-  return content::NavigationThrottle::PROCEED;
++  content::WebContents* web_contents = navigation_handle()->GetWebContents();
++  const std::string error =
++      base::StringPrintf(kBlockTabUnderFormatMessage,
++                          navigation_handle()->GetURL().spec().c_str());
++  web_contents->GetPrimaryMainFrame()->AddMessageToConsole(
++      blink::mojom::ConsoleMessageLevel::kError, error.c_str());
++  ShowUI();
++  return content::NavigationThrottle::CANCEL;
+ }
+ 
+ void TabUnderNavigationThrottle::ShowUI() {
 diff --git a/components/blocked_content/android/popup_blocked_message_delegate.cc b/components/blocked_content/android/popup_blocked_message_delegate.cc
 --- a/components/blocked_content/android/popup_blocked_message_delegate.cc
 +++ b/components/blocked_content/android/popup_blocked_message_delegate.cc

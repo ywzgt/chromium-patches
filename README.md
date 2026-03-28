@@ -3,3 +3,4 @@
  - [Bromite](https://github.com/bromite/bromite)
  - [Cromite](https://github.com/uazo/cromite)
  - [Chromium-sdk](https://gitlab.com/eyeo/adblockplus/chromium-sdk)
+ - [ungoogled-chromium](https://github.com/ungoogled-software/ungoogled-chromium)

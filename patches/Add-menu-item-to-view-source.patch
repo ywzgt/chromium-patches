@@ -16,33 +16,33 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/java/res/menu/custom_tabs_menu.xml b/chrome/android/java/res/menu/custom_tabs_menu.xml
 --- a/chrome/android/java/res/menu/custom_tabs_menu.xml
 +++ b/chrome/android/java/res/menu/custom_tabs_menu.xml
-@@ -62,6 +62,9 @@ found in the LICENSE file.
-         <item android:id="@+id/add_to_homescreen_id"
+@@ -58,6 +58,9 @@ found in the LICENSE file.
+         <item android:id="@+id/universal_install"
              android:title="@string/menu_add_to_homescreen"
              android:orderInCategory="2" />
 +        <item android:id="@+id/view_source_id"
 +            android:title="@string/view_source"
 +            android:orderInCategory="2" />
-         <item android:id="@+id/install_webapp_id"
-             android:title="@string/menu_install_webapp"
+         <item android:id="@+id/open_webapk_id"
+             android:title="@string/menu_open_webapk"
              android:orderInCategory="2" />
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
-@@ -107,6 +107,9 @@ found in the LICENSE file.
-         <item android:id="@+id/add_to_homescreen_id"
+@@ -125,6 +125,9 @@ found in the LICENSE file.
+         <item android:id="@+id/universal_install"
              android:title="@string/menu_add_to_homescreen"
              android:icon="@drawable/ic_add_to_home_screen" />
 +        <item android:id="@+id/view_source_id"
 +            android:title="@string/view_source"
 +            android:icon="@drawable/ic_drive_document_24dp" />
-         <item android:id="@+id/install_webapp_id"
-             android:title="@string/menu_install_webapp"
-             android:icon="@drawable/ic_install_webapp" />
+         <item android:id="@+id/open_webapk_id"
+             android:title="@string/menu_open_webapk"
+             android:icon="@drawable/ic_open_webapk" />
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -3003,6 +3003,8 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+@@ -3135,6 +3135,8 @@ public class ChromeTabbedActivity extends ChromeActivity implements MismatchedIn
                  NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_DOWNLOADS_MANAGER);
              }
              RecordUserAction.record("MobileMenuDownloadManager");
@@ -54,7 +54,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedAct
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
-@@ -2739,6 +2739,11 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -2531,6 +2531,11 @@ public abstract class ChromeActivity extends AsyncInitializationActivity
              return doOpenWebApk(currentTab);
          }
  
@@ -69,7 +69,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActiv
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
-@@ -575,6 +575,7 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+@@ -587,6 +587,7 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
                          isNativePage, isFileScheme, isContentScheme, isIncognito, url));
  
          updateRequestDesktopSiteMenuItem(menu, currentTab, true /* can show */, isNativePage);
@@ -77,7 +77,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/App
  
          updateAutoDarkMenuItem(menu, currentTab, isNativePage);
  
-@@ -1294,6 +1295,23 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+@@ -1328,6 +1329,23 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
          findInPageMenuRow.setVisible(itemVisible);
      }
  
@@ -104,7 +104,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/App
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-@@ -294,6 +294,7 @@ public class CustomTabAppMenuPropertiesDelegate extends AppMenuPropertiesDelegat
+@@ -304,6 +304,7 @@ public class CustomTabAppMenuPropertiesDelegate extends AppMenuPropertiesDelegat
  
              updateRequestDesktopSiteMenuItem(
                      menu, currentTab, requestDesktopSiteVisible, isNativePage);
@@ -115,8 +115,8 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/Cust
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -316,6 +316,10 @@ CHAR_LIMIT guidelines:
-         USB
+@@ -315,6 +315,10 @@ CHAR_LIMIT guidelines:
+         Collaboration
        </message>
  
 +      <message name="IDS_VIEW_SOURCE" desc="Title for the menu command to view the source of the current page. [CHAR-LIMIT=40]">

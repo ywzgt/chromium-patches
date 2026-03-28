@@ -1,0 +1,63 @@
+--- a/chrome/browser/performance_manager/policies/background_tab_loading_policy.cc
++++ b/chrome/browser/performance_manager/policies/background_tab_loading_policy.cc
+@@ -362,6 +362,9 @@ base::Value::Dict BackgroundTabLoadingPolicy::DescribeSystemNodeData(
+ 
+ bool BackgroundTabLoadingPolicy::ShouldLoad(
+     const PageNodeToLoadData& page_node_data) {
++  if (base::FeatureList::IsEnabled(kDisableDiscardReload))
++    return false;
++
+   if (tab_loads_started_ < kMinTabsToLoad)
+     return true;
+ 
+@@ -536,6 +539,9 @@ void BackgroundTabLoadingPolicy::MaybeLoadSomeTabs() {
+   // Continue to load tabs while possible. This is in a loop with a
+   // recalculation of GetMaxNewTabLoads() as reentrancy can cause conditions
+   // to change as each tab load is initiated.
++  if (base::FeatureList::IsEnabled(kDisableDiscardReload))
++    return;
++
+   while (GetMaxNewTabLoads() > 0)
+     LoadNextTab();
+ 
+--- a/components/performance_manager/features.cc
++++ b/components/performance_manager/features.cc
+@@ -167,4 +167,8 @@ BASE_FEATURE(kKeepDefaultSearchEngineRendererAlive,
+              "KeepDefaultSearchEngineRendererAlive",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++BASE_FEATURE(kDisableDiscardReload,
++             "DisableDiscardReload",
++             base::FEATURE_ENABLED_BY_DEFAULT);
++
+ }  // namespace performance_manager::features
+--- a/components/performance_manager/public/features.h
++++ b/components/performance_manager/public/features.h
+@@ -160,6 +160,8 @@ BASE_DECLARE_FEATURE(kThrottleUnimportantFrameRate);
+ // (crbug.com/365958798).
+ BASE_DECLARE_FEATURE(kKeepDefaultSearchEngineRendererAlive);
+ 
++BASE_DECLARE_FEATURE(kDisableDiscardReload);
++
+ }  // namespace performance_manager::features
+ 
+ #endif  // COMPONENTS_PERFORMANCE_MANAGER_PUBLIC_FEATURES_H_
+--- a/content/browser/renderer_host/navigation_controller_impl.cc
++++ b/content/browser/renderer_host/navigation_controller_impl.cc
+@@ -4314,8 +4314,15 @@
+ }
+ 
+ void NavigationControllerImpl::SetActive(bool is_active) {
+-  if (is_active && needs_reload_)
++  if (is_active && needs_reload_) {
++    if (base::FeatureList::IsEnabled(
++        performance_manager::features::kDisableDiscardReload)) {
++      needs_reload_ = false;
++      return;
++    }
++
+     LoadIfNecessary();
++  }
+ 
+   if (frame_tree_->is_primary();
+       auto* cache = GetNavigationEntryScreenshotCache()) {

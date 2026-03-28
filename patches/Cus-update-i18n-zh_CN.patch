@@ -1,9 +1,20 @@
+From: ywzgt <ywzgt@users.noreply.github.com>
+Date: Tue, 10 Mar 2026 20:50:53 +0800
+Subject: Update i18n zh_CN
+
+---
+ .../android_chrome_strings_zh-CN.xtb          | 35 ++++++++++++++++-
+ .../strings/components_strings_zh-CN.xtb      | 38 ++++++++++++++++++-
+ 2 files changed, 71 insertions(+), 2 deletions(-)
+
+diff --git a/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb b/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb
+index 4be72a9..01c7749 100644
 --- a/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb
 +++ b/chrome/browser/ui/android/strings/translations/android_chrome_strings_zh-CN.xtb
-@@ -1666,4 +1666,38 @@
- <translation id="988091779042748639">若要删除您设备中的无痕浏览记录，请关闭所有无痕式标签页。</translation>
+@@ -1851,4 +1851,38 @@
  <translation id="992745192656291733"><ph name="TAB_COUNT" /> 个标签页</translation>
  <translation id="996149300115483134">动态卡片上的菜单已关闭</translation>
+ <translation id="99907655649633293"><ph name="TAB_TITLE" />，无痕式标签页</translation>
 -</translationbundle>
 \ No newline at end of file
 +<translation id="6897140037006041989">用户代理</translation>
@@ -41,11 +52,13 @@
 +<translation id="2763506109354032641">导出书签到文件</translation>
 +<translation id="5494920125229734069">全选</translation>
 +</translationbundle>
+diff --git a/components/strings/components_strings_zh-CN.xtb b/components/strings/components_strings_zh-CN.xtb
+index 023bd8f..019baf8 100644
 --- a/components/strings/components_strings_zh-CN.xtb
 +++ b/components/strings/components_strings_zh-CN.xtb
-@@ -4330,4 +4330,40 @@
- <translation id="994346157028146140">JIS B1</translation>
+@@ -4699,4 +4699,40 @@
  <translation id="995755448277384931">添加 IBAN</translation>
+ <translation id="995782501881226248">YouTube</translation>
  <translation id="997986563973421916">来自 Google Pay</translation>
 -</translationbundle>
 \ No newline at end of file

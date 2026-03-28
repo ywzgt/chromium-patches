@@ -1,0 +1,11 @@
+--- a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
+@@ -3,6 +3,8 @@
+ // found in the LICENSE file.
+ 
+ package org.chromium.chrome.browser.privacy.settings;
++import android.content.SharedPreferences;
++import org.chromium.base.ContextUtils;
+ 
+ import static org.chromium.components.content_settings.PrefNames.COOKIE_CONTROLS_MODE;
+ 

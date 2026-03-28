@@ -15,19 +15,19 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -334,8 +334,6 @@ if (current_toolchain == default_toolchain) {
+@@ -317,8 +317,6 @@ if (current_toolchain == default_toolchain) {
        "$google_play_services_package:google_play_services_gcm_java",
        "$google_play_services_package:google_play_services_iid_java",
        "$google_play_services_package:google_play_services_tasks_java",
 -      "$google_play_services_package:google_play_services_vision_common_java",
 -      "$google_play_services_package:google_play_services_vision_java",
+       "//base:content_uri_utils_java",
+       "//base:service_loader_java",
        "//base/version_info/android:version_constants_java",
-       "//cc:cc_java",
-       "//cc/mojom:mojom_java",
 diff --git a/services/shape_detection/BUILD.gn b/services/shape_detection/BUILD.gn
 --- a/services/shape_detection/BUILD.gn
 +++ b/services/shape_detection/BUILD.gn
-@@ -111,21 +111,13 @@ if (is_android) {
+@@ -109,21 +109,13 @@ if (is_android) {
  
    android_library("shape_detection_java") {
      sources = [
@@ -52,7 +52,7 @@ diff --git a/services/shape_detection/BUILD.gn b/services/shape_detection/BUILD.
 diff --git a/services/shape_detection/android/java/src/org/chromium/shape_detection/BitmapUtils.java b/services/shape_detection/android/java/src/org/chromium/shape_detection/BitmapUtils.java
 --- a/services/shape_detection/android/java/src/org/chromium/shape_detection/BitmapUtils.java
 +++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/BitmapUtils.java
-@@ -6,8 +6,6 @@ package org.chromium.shape_detection;
+@@ -7,8 +7,6 @@ import org.chromium.build.annotations.NullMarked;
  
  import android.graphics.Bitmap;
  
@@ -61,12 +61,12 @@ diff --git a/services/shape_detection/android/java/src/org/chromium/shape_detect
  import org.chromium.mojo_base.BigBufferUtil;
  
  import java.nio.ByteBuffer;
-@@ -41,14 +39,4 @@ public class BitmapUtils {
+@@ -44,14 +42,4 @@ public class BitmapUtils {
              return bitmap;
          }
      }
 -
--    public static Frame convertToFrame(org.chromium.skia.mojom.BitmapN32 bitmapData) {
+-    public static @Nullable Frame convertToFrame(org.chromium.skia.mojom.BitmapN32 bitmapData) {
 -        Bitmap bitmap = convertToBitmap(bitmapData);
 -        if (bitmap == null) {
 -            return null;
@@ -79,7 +79,7 @@ diff --git a/services/shape_detection/android/java/src/org/chromium/shape_detect
 diff --git a/services/shape_detection/android/java/src/org/chromium/shape_detection/InterfaceRegistrar.java b/services/shape_detection/android/java/src/org/chromium/shape_detection/InterfaceRegistrar.java
 --- a/services/shape_detection/android/java/src/org/chromium/shape_detection/InterfaceRegistrar.java
 +++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/InterfaceRegistrar.java
-@@ -9,9 +9,6 @@ import org.jni_zero.JNINamespace;
+@@ -10,9 +10,6 @@ import org.jni_zero.JNINamespace;
  
  import org.chromium.mojo.system.MessagePipeHandle;
  import org.chromium.mojo.system.impl.CoreImpl;
@@ -88,8 +88,8 @@ diff --git a/services/shape_detection/android/java/src/org/chromium/shape_detect
 -import org.chromium.shape_detection.mojom.TextDetection;
  
  @JNINamespace("shape_detection")
- class InterfaceRegistrar {
-@@ -23,33 +20,17 @@ class InterfaceRegistrar {
+ @NullMarked
+@@ -25,33 +22,17 @@ class InterfaceRegistrar {
      static void bindBarcodeDetectionProvider(long nativeHandle) {
          // Immediately wrap |nativeHandle| as it cannot be allowed to leak.
          MessagePipeHandle handle = messagePipeHandleFromNative(nativeHandle);

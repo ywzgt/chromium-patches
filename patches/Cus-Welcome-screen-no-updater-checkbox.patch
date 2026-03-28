@@ -1,0 +1,132 @@
+--- a/chrome/android/java/res/layout/fre_tosanduma.xml
++++ b/chrome/android/java/res/layout/fre_tosanduma.xml
+@@ -84,15 +84,6 @@ found in the LICENSE file.
+                         android:layout_marginBottom="@dimen/fre_tos_bottom_margin"
+                         android:lineSpacingMultiplier="1.4"
+                         android:textAppearance="@style/TextAppearance.TextMedium.Primary" />
+-
+-                    <CheckBox
+-                        android:id="@+id/auto_updater_checkbox"
+-                        android:layout_width="wrap_content"
+-                        android:layout_height="wrap_content"
+-                        android:lineSpacingMultiplier="1.4"
+-                        android:text="@string/auto_updater_check"
+-                        android:paddingStart="@dimen/fre_tos_checkbox_padding"
+-                        android:textAppearance="@style/TextAppearance.TextMedium.Primary" />
+                 </LinearLayout>
+ 
+                 <include
+--- a/chrome/android/java/src/org/chromium/chrome/browser/firstrun/ToSAndUMAFirstRunFragment.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/firstrun/ToSAndUMAFirstRunFragment.java
+@@ -16,9 +16,6 @@ import android.widget.Button;
+ import android.widget.CheckBox;
+ import android.widget.TextView;
+ 
+-import android.content.SharedPreferences;
+-import org.chromium.chrome.browser.omaha.OmahaPrefUtils;
+-
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+ import androidx.annotation.VisibleForTesting;
+@@ -63,8 +60,6 @@ public class ToSAndUMAFirstRunFragment
+     private boolean mUserInteractedWithUmaCheckbox;
+ 
+     private Button mAcceptButton;
+-    private CheckBox mAutoUpdaterCheckBox;
+-    private boolean mAutoUpdaterChecked;
+     private TextView mTosAndPrivacy;
+     private View mTitle;
+     private View mProgressSpinner;
+@@ -91,15 +86,10 @@ public class ToSAndUMAFirstRunFragment
+         mProgressSpinner = view.findViewById(R.id.progress_spinner);
+         mProgressSpinner.setVisibility(View.GONE);
+         mAcceptButton = (Button) view.findViewById(R.id.terms_accept);
+-        mAutoUpdaterCheckBox = (CheckBox) view.findViewById(R.id.auto_updater_checkbox);
+         mTosAndPrivacy = (TextView) view.findViewById(R.id.tos_and_privacy);
+ 
+         // Register event listeners.
+         mAcceptButton.setOnClickListener((v) -> onTosButtonClicked());
+-        mAutoUpdaterCheckBox.setOnCheckedChangeListener(
+-                ((compoundButton, isChecked) -> {
+-            mAutoUpdaterChecked = isChecked;
+-        }));
+ 
+         // Make TextView links clickable.
+         mTosAndPrivacy.setMovementMethod(LinkMovementMethod.getInstance());
+@@ -139,11 +129,6 @@ public class ToSAndUMAFirstRunFragment
+         if (!isVisibleToUser) {
+             // Restore original enabled & visibility states, in case the user returns to the page.
+             setSpinnerVisible(false);
+-        } else {
+-            // On certain versions of Android, the checkbox will appear unchecked upon revisiting
+-            // the page.  Force it to the end state of the drawable animation as a work around.
+-            // crbug.com/666258
+-            mAutoUpdaterCheckBox.jumpDrawablesToCurrentState();
+         }
+     }
+ 
+@@ -170,7 +155,6 @@ public class ToSAndUMAFirstRunFragment
+         assert !isWaitingForNativeAndPolicyInit();
+ 
+         setSpinnerVisible(false);
+-        mAutoUpdaterCheckBox.setChecked(false);
+     }
+ 
+     private void updateView() {
+@@ -210,10 +194,6 @@ public class ToSAndUMAFirstRunFragment
+         mTosAndPrivacy.setText(SpanApplier.applySpans(tosString, spans.toArray(new SpanInfo[0])));
+     }
+ 
+-    private void updateReportCheckbox() {
+-        mAutoUpdaterCheckBox.setChecked(false);
+-    }
+-
+     private void onPolicyServiceInitialized(boolean onDevicePolicyFound) {
+         assert !mPolicyServiceInitialized;
+ 
+@@ -239,11 +219,6 @@ public class ToSAndUMAFirstRunFragment
+         mTosButtonClicked = true;
+         mTosAcceptedTime = SystemClock.elapsedRealtime();
+ 
+-        // save updater configuration only on button click
+-        SharedPreferences.Editor sharedPreferenceEditor = OmahaPrefUtils.getSharedPreferences().edit();
+-        sharedPreferenceEditor.putBoolean(OmahaPrefUtils.PREF_ALLOW_INLINE_UPDATE, mAutoUpdaterChecked);
+-        sharedPreferenceEditor.apply();
+-
+         tryMarkTermsAccepted(true);
+     }
+ 
+@@ -309,7 +284,6 @@ public class ToSAndUMAFirstRunFragment
+ 
+         mAcceptButton.setVisibility(visibility);
+         mTosAndPrivacy.setVisibility(visibility);
+-        mAutoUpdaterCheckBox.setVisibility(visibility);
+     }
+ 
+     protected View getToSAndPrivacyText() {
+--- a/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/Welcome-screen.grdp
++++ b/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/Welcome-screen.grdp
+@@ -3,11 +3,8 @@
+     <message name="IDS_FRE_CONTINUE" desc="Text for first page accept and continue button [CHAR_LIMIT=20]">
+         Continue
+     </message>
+-    <message name="IDS_AUTO_UPDATER_CHECK" desc="Message for the checkbox for automatic Bromite updates">
+-        Automatic checks for Bromite app updates
+-    </message>
+ 
+-    <message name="IDS_BROMITE_FRE_FOOTER_PRIVACY_POLICY" desc="Message explaining the privacy policy of the file hosting service provider for adblock updates and Bromite app automatic updates">
++    <message name="IDS_BROMITE_FRE_FOOTER_PRIVACY_POLICY" desc="Automatic ad block filters updates are subject to the Cromite Privacy statement.">
+         <ph name="BEGIN_PRIVACY_LINK1">&lt;PRIVACY_LINK1&gt;</ph>Automatic ad block filters updates<ph name="END_PRIVACY_LINK1">&lt;/PRIVACY_LINK1&gt;</ph> are subject to the <ph name="BEGIN_PRIVACY_LINK2">&lt;PRIVACY_LINK2&gt;</ph>Cromite Privacy statement<ph name="END_PRIVACY_LINK2">&lt;/PRIVACY_LINK2&gt;</ph>.
+ The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVACY_LINK3&gt;</ph>automatic app updates<ph name="END_PRIVACY_LINK3">&lt;/PRIVACY_LINK3&gt;</ph> which are subject to the <ph name="BEGIN_PRIVACY_LINK4">&lt;PRIVACY_LINK4&gt;</ph>GitHub Privacy statement<ph name="END_PRIVACY_LINK4">&lt;/PRIVACY_LINK4&gt;</ph>.
+     </message>
+@@ -18,10 +15,4 @@ The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVA
+     <message name="IDS_PRIVACY_LINK2" desc="URL for privacy policy for the ad block updater" translateable="false">
+         https://github.com/uazo/cromite/blob/master/docs/PRIVACY_POLICY.md
+     </message>
+-    <message name="IDS_PRIVACY_LINK3" desc="URL for Bromite wiki page about automatic updates" translateable="false">
+-        https://github.com/uazo/cromite/blob/master/docs/AUTOMATIC_UPDATES.md
+-    </message>
+-    <message name="IDS_PRIVACY_LINK4" desc="URL for privacy policy for the Bromite auto updater" translateable="false">
+-        https://docs.github.com/en/github/site-policy/github-privacy-statement#github-pages
+-    </message>
+ </grit-part>

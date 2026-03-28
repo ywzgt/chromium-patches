@@ -1,5 +1,15 @@
+Client-hints-overrides.patch
+disable-appending-variations-header.patch
+Partition-Blink-memory-cache.patch
+Block-leakage-of-urls-in-sandbox-iframes.patch
+UGC-disable-network-time-tracker.patch
+UGC-disable-privacy-sandbox.patch
+UGC-disable-webrtc-log-uploader.patch
+UGC-default-webrtc-ip-handling-policy.patch
 eyeo-sdk-base.patch
 eyeo-sdk-chrome_integration.patch
 eyeo-sdk-extension_api.patch
-eyeo-sdk-settings-for-desktop.patch
 Cus-Remove-eyeo-sdk-user-counting.patch
+Cus-eyeo-sdk-UI-for-desktop.patch
+Cus-Disable-conversion-measurement-api.patch
+Cus-add-flag-to-discard-noReload.patch

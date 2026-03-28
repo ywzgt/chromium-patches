@@ -1,11 +1,15 @@
 bromite-build-utils.patch
+Add-cromite-flags-support.patch
+sharing-hub-always-use-visible-URL.patch
 ungoogled-chromium-no-special-hosts-domains.patch
+ungoogled-chromium-Disable-Network-Time-Tracker.patch
 Add-support-for-ISupportHelpAndFeedback.patch
 webRTC-do-not-expose-local-IP-addresses.patch
 Add-search-engine.patch
 Add-exit-menu-item.patch
 Do-not-ignore-download-location-prompt-setting.patch
 Add-support-for-writing-URIs.patch
+Restore-BookmarkToolbar-setCurrentFolder.patch
 Add-bookmark-import-export-actions.patch
 Bookmarks-select-all-menu-entry.patch
 Add-a-proxy-configuration-page.patch
@@ -19,6 +23,7 @@ Add-option-to-force-tablet-UI.patch
 User-agent-customization.patch
 Experimental-user-scripts-support.patch
 Disable-crash-reporting.patch
+Disable-conversion-measurement-api.patch
 Content-settings-infrastructure.patch
 Add-autoplay-site-setting.patch
 Site-setting-for-images.patch
@@ -30,7 +35,16 @@ Revert-remove-allowscript-content-setting-secondary-url.patch
 Timezone-customization.patch
 Change-popup-site-setting.patch
 Enable-ImprovedBookmarks-by-default.patch
-Add-cromite-flags-support.patch
+Enable-search-engine-settings-desktop-ui.patch
+Fix-chromium-vanilla.patch
+Disable-privacy-sandbox.patch
+disable-WebView-variations-support.patch
+Client-hints-overrides.patch
+disable-appending-variations-header.patch
+Restore-LastTabStandingTracker.patch
+Partition-Blink-memory-cache.patch
+Improve-the-browser-sandbox.patch
+Block-leakage-of-urls-in-sandbox-iframes.patch
 eyeo-base.patch
 eyeo-chrome_integration.patch
 eyeo-android_api.patch
@@ -38,3 +52,4 @@ eyeo-android_settings.patch
 eyeo-extension_api.patch
 eyeo-for-Cromite.patch
 Cus-update-i18n-zh_CN.patch
+Cus-Chrome-NTP.patch
