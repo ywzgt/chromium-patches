@@ -1,7 +1,6 @@
 Client-hints-overrides.patch
 disable-appending-variations-header.patch
 Partition-Blink-memory-cache.patch
-Block-leakage-of-urls-in-sandbox-iframes.patch
 UGC-disable-network-time-tracker.patch
 UGC-disable-privacy-sandbox.patch
 UGC-disable-webrtc-log-uploader.patch
@@ -13,3 +12,4 @@ Cus-Remove-eyeo-sdk-user-counting.patch
 Cus-eyeo-sdk-UI-for-desktop.patch
 Cus-Disable-conversion-measurement-api.patch
 Cus-add-flag-to-discard-noReload.patch
+Cus-Xcode15+-SDK-compat.patch

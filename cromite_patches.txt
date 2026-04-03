@@ -42,6 +42,7 @@ User-agent-customization.patch
 Add-flag-to-disable-vibration.patch
 Experimental-user-scripts-support.patch
 Disable-all-predictors-code.patch
+OpenSearch-miscellaneous.patch
 Dictionary-suggestions-for-the-Omnibox.patch
 Disable-AsyncDNS-by-default.patch
 Disable-crash-reporting.patch

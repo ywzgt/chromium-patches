@@ -289,6 +289,103 @@ deleted file mode 100644
    SessionStatsFactory::GetForBrowserContext(browser_context);
    SitekeyStorageFactory::GetForBrowserContext(browser_context);
  }
+--- a/components/adblock/content/browser/page_view_stats.cc
++++ b/components/adblock/content/browser/page_view_stats.cc
+@@ -159,26 +159,6 @@ void PageViewStats::OnMatchedInternal(
+   }
+ }
+ 
+-base::Value::Dict PageViewStats::GetPayload() const {
+-  base::Value::Dict payload;
+-  payload.Set(kAcceptableAdsStatsCountKey,
+-              GetPageViewsCount(Metric::AcceptableAds));
+-  payload.Set(kAcceptableAdsBlockthroughStatsCountKey,
+-              GetPageViewsCount(Metric::AcceptableAdsBlockThrough));
+-  payload.Set(kAllowedStatsCountKey, GetPageViewsCount(Metric::Allowing));
+-  payload.Set(kBlockedStatsCountKey, GetPageViewsCount(Metric::Blocking));
+-  payload.Set(kTotalPagesStatsCountKey, GetPageViewsCount(Metric::TotalPages));
+-  return payload;
+-}
+-
+-void PageViewStats::ResetStats() {
+-  ResetPageViewsCount(Metric::AcceptableAds);
+-  ResetPageViewsCount(Metric::AcceptableAdsBlockThrough);
+-  ResetPageViewsCount(Metric::Allowing);
+-  ResetPageViewsCount(Metric::Blocking);
+-  ResetPageViewsCount(Metric::TotalPages);
+-}
+-
+ void PageViewStats::RegisterMainFrameNavigation(
+     content::RenderFrameHost* render_frame_host) {
+   if (render_frame_host == nullptr) {
+@@ -200,67 +180,13 @@ void PageViewStats::RegisterAcceptableAdsBlockthroughtHit(
+ 
+ void PageViewStats::ParkMetric(content::Page& page, Metric metric) {
+   auto main_frame_id = page.GetMainDocument().GetGlobalId();
+-  parked_metrics_before_main_navigation_[main_frame_id].insert(metric);
+ }
+ 
+ void PageViewStats::RecordParkedMetrics(content::Page& page) {
+   auto main_frame_id = page.GetMainDocument().GetGlobalId();
+-  for (auto it = parked_metrics_before_main_navigation_.cbegin();
+-       it != parked_metrics_before_main_navigation_.cend();) {
+-    auto* rfh = content::RenderFrameHost::FromID(it->first);
+-    // Check if the parked entry represents a dead RFH, if so erase it
+-    if (!rfh) {
+-      it = parked_metrics_before_main_navigation_.erase(it);
+-      continue;
+-    }
+-    // If this is the entry matching Page we are looking for...
+-    if (main_frame_id == it->first) {
+-      // ...and it contains some parked metrics...
+-      if (!it->second.empty()) {
+-        //...then record them
+-        auto* page_info = EyeoPageInfo::GetOrCreateForPage(page);
+-        ScopedDictPrefUpdate update(prefs_,
+-                                    common::prefs::kTelemetryPageViewStats);
+-        for (auto parked_metric : it->second) {
+-          auto parked_metric_key = GetReportedNameForMetric(parked_metric);
+-          const auto current_count_for_parked =
+-              update->FindInt(parked_metric_key);
+-          update->Set(parked_metric_key,
+-                      current_count_for_parked.value_or(0) + 1);
+-          // Now with "final" EyeoPageInfo we can mark metric as recorded
+-          page_info->SetMatchedPageView(parked_metric);
+-        }
+-      }
+-      it = parked_metrics_before_main_navigation_.erase(it);
+-    } else {
+-      ++it;
+-    }
+-  }
+ }
+ 
+ void PageViewStats::RecordPageView(content::Page& page, Metric metric) {
+-  auto dict_child_key = GetReportedNameForMetric(metric);
+-  auto* page_info = EyeoPageInfo::GetOrCreateForPage(page);
+-  if (!IsNavigationCommittingNow(metric) &&
+-      !WasNavigationCommitted(metric, page_info)) {
+-    ParkMetric(page, metric);
+-    return;
+-  }
+-  // We don't count stats metrics for individual requests but for a whole page.
+-  // If this is the first request matched a metric for this page, we increment
+-  // the counter. We store previous matches in EyeoPageInfo, so we can check if
+-  // this is the first metric match for this page.
+-  if (!page_info->SetMatchedPageView(metric)) {
+-    // metric was already counted
+-    return;
+-  }
+-  ScopedDictPrefUpdate update(prefs_, common::prefs::kTelemetryPageViewStats);
+-  const auto current_count = update->FindInt(dict_child_key);
+-  update->Set(dict_child_key, current_count.value_or(0) + 1);
+-  // Check parked metrics and record
+-  if (WasNavigationCommitted(metric, page_info)) {
+-    RecordParkedMetrics(page);
+-  }
+ }
+ 
+ int PageViewStats::GetPageViewsCount(Metric metric) const {
 --- a/components/adblock/content/browser/page_view_stats.h
 +++ b/components/adblock/content/browser/page_view_stats.h
 @@ -23,7 +23,6 @@
@@ -299,6 +396,36 @@ deleted file mode 100644
  #include "components/prefs/pref_service.h"
  #include "content/public/browser/browser_context.h"
  #include "content/public/browser/page.h"
+@@ -35,8 +34,7 @@ namespace adblock {
+ // Collects anonymous statistics about the frequency of showing acceptable ads.
+ // Used for evaluating the effectiveness of the Acceptable Ads program.
+ class PageViewStats final
+-    : public ResourceClassificationRunner::Observer,
+-      public ActivepingTelemetryTopicProvider::StatsPayloadProvider {
++    : public ResourceClassificationRunner::Observer {
+  public:
+   enum Metric {
+     AcceptableAds,
+@@ -74,10 +72,6 @@ class PageViewStats final
+                       const GURL& subscription,
+                       const std::string& configuration_name) final;
+ 
+-  // ActivepingTelemetryTopicProvider::StatsPayloadProvider:
+-  base::Value::Dict GetPayload() const final;
+-  void ResetStats() final;
+-
+   // Counts a page view, whether it's an AA page view or not. Increments the
+   // total count.
+   void RegisterMainFrameNavigation(content::RenderFrameHost* render_frame_host);
+@@ -111,8 +105,6 @@ class PageViewStats final
+   raw_ptr<ResourceClassificationRunner> classification_runner_;
+   raw_ptr<PrefService> prefs_;
+   const GURL endpoint_url_;
+-  std::map<content::GlobalRenderFrameHostId, std::set<Metric>>
+-      parked_metrics_before_main_navigation_;
+   base::WeakPtrFactory<PageViewStats> weak_factory_{this};
+ };
+ 
 --- a/components/adblock/core/BUILD.gn
 +++ b/components/adblock/core/BUILD.gn
 @@ -49,43 +49,9 @@ source_set("schema_hash") {

@@ -1,0 +1,14 @@
+--- a/ui/events/keycodes/keyboard_code_conversion_mac.mm
++++ b/ui/events/keycodes/keyboard_code_conversion_mac.mm
+@@ -24,6 +24,11 @@
+ #include "base/third_party/icu/icu_utf.h"
+ #include "ui/events/keycodes/dom/keycode_converter.h"
+ 
++// ===== Xcode 15+ SDK compatibility =====
++#ifndef kVK_ContextualMenu
++#define kVK_ContextualMenu 0x6E
++#endif
++
+ namespace ui {
+ 
+ namespace {
