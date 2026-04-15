@@ -20,6 +20,7 @@ Add-menu-item-to-view-source.patch
 Enable-darken-websites-checkbox-in-themes.patch
 Add-menu-item-to-bookmark-all-tabs.patch
 Add-option-to-force-tablet-UI.patch
+Cus-fixbuild-for-force-tablet-UI.patch
 User-agent-customization.patch
 Experimental-user-scripts-support.patch
 Disable-crash-reporting.patch
@@ -41,7 +42,6 @@ Disable-privacy-sandbox.patch
 disable-WebView-variations-support.patch
 Client-hints-overrides.patch
 disable-appending-variations-header.patch
-Restore-LastTabStandingTracker.patch
 Partition-Blink-memory-cache.patch
 Improve-the-browser-sandbox.patch
 Block-leakage-of-urls-in-sandbox-iframes.patch

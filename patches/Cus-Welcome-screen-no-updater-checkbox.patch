@@ -73,7 +73,25 @@
      }
  
      private void updateView() {
-@@ -210,10 +194,6 @@ public class ToSAndUMAFirstRunFragment
+@@ -180,8 +164,6 @@ public class ToSAndUMAFirstRunFragment
+         }
+ 
+         updateTosText();
+-
+-        updateReportCheckbox();
+     }
+ 
+     private SpanInfo buildPrivacyPolicyLink(String suffix, int url) {
+@@ -201,19 +183,11 @@ public class ToSAndUMAFirstRunFragment
+ 
+         spans.add(buildPrivacyPolicyLink("2", R.string.privacy_link2));
+ 
+-        spans.add(buildPrivacyPolicyLink("3", R.string.privacy_link3));
+-
+-        spans.add(buildPrivacyPolicyLink("4", R.string.privacy_link4));
+-
+         String tosString = getString(R.string.bromite_fre_footer_privacy_policy);
+ 
          mTosAndPrivacy.setText(SpanApplier.applySpans(tosString, spans.toArray(new SpanInfo[0])));
      }
  
@@ -84,7 +102,7 @@
      private void onPolicyServiceInitialized(boolean onDevicePolicyFound) {
          assert !mPolicyServiceInitialized;
  
-@@ -239,11 +219,6 @@ public class ToSAndUMAFirstRunFragment
+@@ -239,11 +213,6 @@ public class ToSAndUMAFirstRunFragment
          mTosButtonClicked = true;
          mTosAcceptedTime = SystemClock.elapsedRealtime();
  
@@ -96,7 +114,7 @@
          tryMarkTermsAccepted(true);
      }
  
-@@ -309,7 +284,6 @@ public class ToSAndUMAFirstRunFragment
+@@ -309,7 +278,6 @@ public class ToSAndUMAFirstRunFragment
  
          mAcceptButton.setVisibility(visibility);
          mTosAndPrivacy.setVisibility(visibility);
@@ -106,7 +124,7 @@
      protected View getToSAndPrivacyText() {
 --- a/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/Welcome-screen.grdp
 +++ b/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/Welcome-screen.grdp
-@@ -3,11 +3,8 @@
+@@ -3,13 +3,9 @@
      <message name="IDS_FRE_CONTINUE" desc="Text for first page accept and continue button [CHAR_LIMIT=20]">
          Continue
      </message>
@@ -117,9 +135,11 @@
 -    <message name="IDS_BROMITE_FRE_FOOTER_PRIVACY_POLICY" desc="Message explaining the privacy policy of the file hosting service provider for adblock updates and Bromite app automatic updates">
 +    <message name="IDS_BROMITE_FRE_FOOTER_PRIVACY_POLICY" desc="Automatic ad block filters updates are subject to the Cromite Privacy statement.">
          <ph name="BEGIN_PRIVACY_LINK1">&lt;PRIVACY_LINK1&gt;</ph>Automatic ad block filters updates<ph name="END_PRIVACY_LINK1">&lt;/PRIVACY_LINK1&gt;</ph> are subject to the <ph name="BEGIN_PRIVACY_LINK2">&lt;PRIVACY_LINK2&gt;</ph>Cromite Privacy statement<ph name="END_PRIVACY_LINK2">&lt;/PRIVACY_LINK2&gt;</ph>.
- The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVACY_LINK3&gt;</ph>automatic app updates<ph name="END_PRIVACY_LINK3">&lt;/PRIVACY_LINK3&gt;</ph> which are subject to the <ph name="BEGIN_PRIVACY_LINK4">&lt;PRIVACY_LINK4&gt;</ph>GitHub Privacy statement<ph name="END_PRIVACY_LINK4">&lt;/PRIVACY_LINK4&gt;</ph>.
+-The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVACY_LINK3&gt;</ph>automatic app updates<ph name="END_PRIVACY_LINK3">&lt;/PRIVACY_LINK3&gt;</ph> which are subject to the <ph name="BEGIN_PRIVACY_LINK4">&lt;PRIVACY_LINK4&gt;</ph>GitHub Privacy statement<ph name="END_PRIVACY_LINK4">&lt;/PRIVACY_LINK4&gt;</ph>.
      </message>
-@@ -18,10 +15,4 @@ The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVA
+ 
+     <message name="IDS_PRIVACY_LINK1" desc="URL for Bromite wiki page about ad blocking" translateable="false">
+@@ -18,10 +14,4 @@ The following checkbox controls instead <ph name="BEGIN_PRIVACY_LINK3">&lt;PRIVA
      <message name="IDS_PRIVACY_LINK2" desc="URL for privacy policy for the ad block updater" translateable="false">
          https://github.com/uazo/cromite/blob/master/docs/PRIVACY_POLICY.md
      </message>

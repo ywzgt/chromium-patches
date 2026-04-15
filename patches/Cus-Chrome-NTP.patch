@@ -15,11 +15,10 @@ diff --git a/chrome/android/java/res/layout/mv_tiles_layout.xml b/chrome/android
 index 9eb24ef..1fd2114 100644
 --- a/chrome/android/java/res/layout/mv_tiles_layout.xml
 +++ b/chrome/android/java/res/layout/mv_tiles_layout.xml
-@@ -6,13 +6,8 @@ found in the LICENSE file.
+@@ -6,13 +6,7 @@ found in the LICENSE file.
  -->
  
  <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-+    xmlns:android="http://schemas.android.com/apk/res/android"
 +    android:id="@+id/mv_tiles_layout"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"
